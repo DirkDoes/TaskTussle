@@ -1,0 +1,39 @@
+# Gradle and Kotlin
+.gradle/
+**/.gradle/
+.kotlin/
+**/.kotlin/
+**/build/
+**/out/
+**/run/
+
+# IDEs
+.idea/
+**/.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Java and diagnostics
+*.class
+*.log
+hs_err_pid*
+replay_pid*
+
+# Local environment overrides
+.env
+**/.env
+!.env.example
+!**/.env.example
+
+# Minecraft server runtimes
+# These contain worlds, player/admin data, generated configs, logs,
+# downloaded libraries, launchers, and deployed mod/resource-pack builds.
+server/
+test-server/
+
+# Operating systems
+.DS_Store
+Thumbs.db
+desktop.ini

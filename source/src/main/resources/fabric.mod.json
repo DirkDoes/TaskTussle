@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "tasktussle",
+  "version": "${version}",
+  "name": "TaskTussle",
+  "description": "Server-side team bingo with block and advancement tasks.",
+  "authors": ["WantToBeeMe"],
+  "license": "All-Rights-Reserved",
+  "environment": "server",
+  "entrypoints": {
+    "server": [
+      { "value": "me.wanttobee.tasktussle.TaskTussleMod", "adapter": "kotlin" }
+    ]
+  },
+  "mixins": ["tasktussle.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "^26.2",
+    "java": ">=25",
+    "fabric-api": "*",
+    "fabric-language-kotlin": "*"
+  }
+}
