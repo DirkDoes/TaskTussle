@@ -4,6 +4,7 @@ import net.minecraft.ChatFormatting
 import net.minecraft.core.component.DataComponents
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.network.chat.Component
+import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.Container
 import net.minecraft.world.SimpleContainer
@@ -177,7 +178,7 @@ object TaskTussleMenus {
 			setting(1, Items.BRICK, "Easy Ratio: ${settings.easyRatio}", ratioLore, settings.easyRatio, settings.easyRatio > 0) { _, click -> settings.easyRatio = ratioChange(settings.easyRatio, click) }
 			setting(2, Items.NETHER_BRICK, "Normal Ratio: ${settings.mediumRatio}", ratioLore, settings.mediumRatio, settings.mediumRatio > 0) { _, click -> settings.mediumRatio = ratioChange(settings.mediumRatio, click) }
 			setting(3, Items.NETHERITE_INGOT, "Hard Ratio: ${settings.hardRatio}", ratioLore, settings.hardRatio, settings.hardRatio > 0) { _, click -> settings.hardRatio = ratioChange(settings.hardRatio, click) }
-			setting(4, Items.PRISMARINE_CRYSTALS, "Chose Teams: ${if (settings.chooseTeams) "on" else "off"}", enchanted = settings.chooseTeams) { _, _ -> settings.chooseTeams = !settings.chooseTeams }
+			setting(4, Items.PAPER, "Chose Teams: ${if (settings.chooseTeams) "on" else "off"}", enchanted = settings.chooseTeams, model = TEAMS_MODEL) { _, _ -> settings.chooseTeams = !settings.chooseTeams }
 			setting(5, Items.CLOCK, "Game Time: ${if (settings.gameMinutes == 0) "disabled" else "${settings.gameMinutes} minutes"}", enchanted = settings.gameMinutes > 0) { player, _ -> service.openTimeSettings(player) }
 			button(8, named(Items.WRITABLE_BOOK, "Load a pre-set", ChatFormatting.GOLD)) { player, _ -> player.sendSystemMessage(TaskTussleService.message("Does nothing yet", ChatFormatting.RED)) }
 
@@ -185,13 +186,15 @@ object TaskTussleMenus {
 			for (slot in 45 until 54) display(slot, emptyOption("game mode"))
 			taskManager(27, Items.SHULKER_SHELL, "Obtain Task", settings.blockWeight, "obtain")
 			taskManager(28, Items.KNOWLEDGE_BOOK, "Advancements Task", settings.advancementWeight, "advancements")
-			taskManager(29, Items.BELL, "Click Task", settings.clickWeight, "click")
+			taskManager(29, Items.PAPER, "Click Task", settings.clickWeight, "click")
 			button(45, named(Items.FILLED_MAP, "Bingo", ChatFormatting.LIGHT_PURPLE, listOf("Click: Open details"))) { player, _ -> service.openManagerSettings(player, "bingo") }
 			broadcastChanges()
 		}
 
 		private fun taskManager(slot: Int, item: Item, title: String, weight: Int, manager: String) {
-			button(slot, named(item, "$title Ratio: ${if (weight == 0) "Disabled" else weight}", ChatFormatting.AQUA, taskLore, max(1, weight), weight > 0)) { player, click ->
+			button(slot, named(item, "$title Ratio: ${if (weight == 0) "Disabled" else weight}", ChatFormatting.AQUA, taskLore, max(1, weight), weight > 0).apply {
+				if (manager == "click") set(DataComponents.ITEM_MODEL, CLICK_MODELS.first())
+			}) { player, click ->
 				if (click.left && click.shift) service.openManagerSettings(player, manager)
 				else {
 					val value = when { click.right && click.shift -> 0; click.right -> max(0, weight - 1); else -> minOf(100, weight + 1) }
@@ -201,8 +204,8 @@ object TaskTussleMenus {
 			}
 		}
 
-		private fun setting(slot: Int, item: Item, title: String, lore: List<String> = emptyList(), count: Int = 1, enchanted: Boolean = false, action: (ServerPlayer, Click) -> Unit) {
-			button(slot, named(item, title, ChatFormatting.GOLD, lore, max(1, count), enchanted)) { player, click -> action(player, click); if (player.containerMenu === this) refresh() }
+		private fun setting(slot: Int, item: Item, title: String, lore: List<String> = emptyList(), count: Int = 1, enchanted: Boolean = false, model: Identifier? = null, action: (ServerPlayer, Click) -> Unit) {
+			button(slot, named(item, title, ChatFormatting.GOLD, lore, max(1, count), enchanted).apply { if (model != null) set(DataComponents.ITEM_MODEL, model) }) { player, click -> action(player, click); if (player.containerMenu === this) refresh() }
 		}
 	}
 
@@ -236,9 +239,6 @@ object TaskTussleMenus {
 			val settings = service.settings
 			setting(9, Items.HOPPER, "Hand in items: ${if (settings.handInItems) "on" else "off"}", enchanted = settings.handInItems) { _, _ -> settings.handInItems = !settings.handInItems }
 			fileSetting(10, true)
-			setting(11, Items.BRICK, "Easy obtain count: ${settings.easyObtainCount}", countLore) { _, click -> settings.easyObtainCount = countChange(settings.easyObtainCount, click) }
-			setting(12, Items.NETHER_BRICK, "Normal obtain count: ${settings.mediumObtainCount}", countLore) { _, click -> settings.mediumObtainCount = countChange(settings.mediumObtainCount, click) }
-			setting(13, Items.NETHERITE_INGOT, "Hard obtain count: ${settings.hardObtainCount}", countLore) { _, click -> settings.hardObtainCount = countChange(settings.hardObtainCount, click) }
 		}
 
 		private fun bingoSettings() {
@@ -353,7 +353,8 @@ object TaskTussleMenus {
 				val memberIds = selection.members.filterValues { it == index }.keys
 				val players = checkNotNull(playerInventory.player.level().server).playerList.players.filter { it.uuid in memberIds }
 				val occupied = players.isNotEmpty()
-				button(index - 1, named(teamItem(index, occupied), "Team $index", teamColor(index), if (occupied) listOf(players.joinToString { it.gameProfile.name }) else listOf("Empty"), max(1, players.size), occupied)) { player, _ ->
+				val selected = selection.members[playerInventory.player.uuid] == index
+				button(index - 1, named(teamItem(index, occupied), "Team $index", teamColor(index), if (occupied) listOf(players.joinToString { it.gameProfile.name }) else listOf("Empty"), max(1, players.size), selected)) { player, _ ->
 					service.toggleTeam(player, index)
 				}
 			}
@@ -361,24 +362,35 @@ object TaskTussleMenus {
 		}
 	}
 
+	private val TEAMS_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "teams")
+	private val TASK_COMPLETE_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "task_complete")
+	private val CLICK_MODELS = (1..3).map { Identifier.fromNamespaceAndPath("tasktussle", "click_me$it") }
 	private val ratioLore = listOf("L Click: Increase ratio", "R Click: Decrease ratio", "Shift+R Click: Set ratio to 0", "A ratio of 0 turns it off")
 	private val taskLore = listOf("Shift+L Click: Open details") + ratioLore
-	private val countLore = listOf("Shift+L Click: +10", "L Click: +1", "R Click: -1", "Shift+R Click: -10")
 	private val mutualLore = listOf("L Click: Increase amount", "R Click: Decrease amount", "Shift+L Click: Set amount to 25", "Shift+R Click: Set amount to 0")
 
 	private fun ratioChange(value: Int, click: Click): Int = when { click.right && click.shift -> 0; click.right -> max(0, value - 1); else -> minOf(100, value + 1) }
-	private fun countChange(value: Int, click: Click): Int = max(1, value + if (click.left) if (click.shift) 10 else 1 else if (click.shift) -10 else -1)
 	private fun simpleChange(value: Int, click: Click, min: Int, max: Int): Int = (value + if (click.right) -1 else 1).coerceIn(min, max)
 
 	private fun taskStack(service: TaskTussleService, task: BingoTask): ItemStack = when {
-		task.completed -> named(Blocks.STAINED_GLASS_PANE.lime().asItem(), service.taskName(task), ChatFormatting.GREEN, listOf("Completed") + task.contributors, enchanted = true)
+		task.completed -> named(Items.PAPER, service.taskName(task), ChatFormatting.GREEN, listOf("Completed") + task.contributors).apply {
+			set(DataComponents.ITEM_MODEL, TASK_COMPLETE_MODEL)
+		}
 		task.failed -> named(Blocks.STAINED_GLASS_PANE.red().asItem(), service.taskName(task), ChatFormatting.RED, listOf("Failed"), enchanted = true)
-		else -> named(taskItem(task), service.taskName(task), ChatFormatting.WHITE, listOf(
-			"Task: ${when (task.template.kind) { TaskKind.BLOCK -> "Obtain Task"; TaskKind.ADVANCEMENT -> "Advancements Task"; TaskKind.CLICK -> "Click Task" }}",
-			"Progress: ${if (task.template.kind == TaskKind.BLOCK) "${task.obtained}/${task.template.amount}" else "0/1"}",
-			"Description: ${when (task.template.kind) { TaskKind.BLOCK -> "obtain this block"; TaskKind.ADVANCEMENT -> "complete this advancement"; TaskKind.CLICK -> "click me" }}",
-		))
+		else -> named(Items.PAPER, service.taskName(task), ChatFormatting.WHITE).apply {
+			set(DataComponents.ITEM_MODEL, if (task.template.kind == TaskKind.CLICK) CLICK_MODELS.random() else BuiltInRegistries.ITEM.getKey(taskItem(task)))
+			val kind = when (task.template.kind) { TaskKind.BLOCK -> "Obtain Task"; TaskKind.ADVANCEMENT -> "Advancements Task"; TaskKind.CLICK -> "Click Task" }
+			val description = when (task.template.kind) { TaskKind.BLOCK -> "obtain this block"; TaskKind.ADVANCEMENT -> "complete this advancement"; TaskKind.CLICK -> "click me" }
+			set(DataComponents.LORE, ItemLore(listOf(
+				taskLoreLine("Task", kind, ChatFormatting.AQUA),
+				taskLoreLine("Description", description, ChatFormatting.WHITE),
+			)))
+		}
 	}
+
+	private fun taskLoreLine(label: String, value: String, valueColor: ChatFormatting): Component =
+		Component.literal("$label: ").withStyle { it.withColor(ChatFormatting.GRAY).withItalic(false) }
+			.append(Component.literal(value).withStyle { it.withColor(valueColor).withItalic(false) })
 
 	private fun taskItem(task: BingoTask): Item = when (task.template.kind) {
 		TaskKind.BLOCK -> BuiltInRegistries.BLOCK.getValue(task.template.id).asItem()
@@ -386,7 +398,9 @@ object TaskTussleMenus {
 		TaskKind.CLICK -> Items.BELL
 	}
 
-	private fun separator(): ItemStack = named(Blocks.STAINED_GLASS_PANE.gray().asItem(), " ", ChatFormatting.DARK_GRAY)
+	private fun separator(): ItemStack = named(Blocks.STAINED_GLASS_PANE.gray().asItem(), " ", ChatFormatting.DARK_GRAY).apply {
+		set(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath("tasktussle", "empty_slot"))
+	}
 	private fun emptyTeamSlot(): ItemStack = named(Blocks.STAINED_GLASS.gray().asItem(), "Empty team slot", ChatFormatting.GRAY)
 	private fun emptyOption(type: String): ItemStack = named(Blocks.STAINED_GLASS.lightGray().asItem(), "Empty $type slot", ChatFormatting.GRAY, listOf("A spot for a future $type"))
 	private fun emptySetting(): ItemStack = named(Blocks.STAINED_GLASS.lightGray().asItem(), "Empty setting slot", ChatFormatting.GRAY, listOf("a spot for a future setting"))

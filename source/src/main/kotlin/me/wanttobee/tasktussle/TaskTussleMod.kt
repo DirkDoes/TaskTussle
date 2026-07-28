@@ -52,4 +52,7 @@ object TaskTussleMod : DedicatedServerModInitializer {
 		player.containerMenu.broadcastFullState()
 		return InteractionResult.SUCCESS_SERVER
 	}
+
+	internal fun isDeliverySpot(stack: net.minecraft.world.item.ItemStack) = service.isDeliverySpot(stack)
+	internal fun clickDeliverySpot(player: ServerPlayer, stack: net.minecraft.world.item.ItemStack) = service.clickDeliverySpot(player, stack)
 }

@@ -13,13 +13,11 @@ data class TaskTemplate(
 	val kind: TaskKind,
 	val id: Identifier,
 	val difficulty: Difficulty,
-	val amount: Int = 1,
 )
 
 data class BingoTask(val template: TaskTemplate) {
 	var completed = false
 	var failed = false
-	var obtained = 0
 	val contributors = mutableSetOf<String>()
 }
 
@@ -50,9 +48,6 @@ data class TaskTussleSettings(
 	var advancementWeight: Int = 2,
 	var clickWeight: Int = 0,
 	var handInItems: Boolean = false,
-	var easyObtainCount: Int = 1,
-	var mediumObtainCount: Int = 1,
-	var hardObtainCount: Int = 1,
 	var mutualTasks: Int = 15,
 	var winningCondition: String = "1 line",
 	var succeedTokens: Int = 0,
@@ -85,7 +80,6 @@ object TaskGenerator {
 		advancementPools: TaskPools,
 		difficultyRatios: Triple<Int, Int, Int>,
 		kindWeights: Triple<Int, Int, Int>,
-		obtainCounts: Triple<Int, Int, Int>,
 		excluded: Set<Pair<TaskKind, Identifier>> = emptySet(),
 		random: Random = Random.Default,
 	): List<TaskTemplate>? {
@@ -93,16 +87,16 @@ object TaskGenerator {
 		val kindCounts = ratioCounts(amount, kindWeights)
 		val selected = mutableListOf<TaskTemplate>()
 
-		selected += selectFromPools(TaskKind.BLOCK, blockPools, kindCounts[0], difficultyRatios, obtainCounts, excluded, random)
-		selected += selectFromPools(TaskKind.ADVANCEMENT, advancementPools, kindCounts[1], difficultyRatios, Triple(1, 1, 1), excluded, random)
+		selected += selectFromPools(TaskKind.BLOCK, blockPools, kindCounts[0], difficultyRatios, excluded, random)
+		selected += selectFromPools(TaskKind.ADVANCEMENT, advancementPools, kindCounts[1], difficultyRatios, excluded, random)
 		repeat(kindCounts[2]) { selected += TaskTemplate(TaskKind.CLICK, clickId, Difficulty.EASY) }
 
 		if (selected.size < amount) {
 			val used = excluded + selected.map { it.kind to it.id }
 			val remaining = amount - selected.size
 			val fallback = buildList {
-				if (kindWeights.first > 0) addAll(allTemplates(TaskKind.BLOCK, blockPools, obtainCounts))
-				if (kindWeights.second > 0) addAll(allTemplates(TaskKind.ADVANCEMENT, advancementPools, Triple(1, 1, 1)))
+				if (kindWeights.first > 0) addAll(allTemplates(TaskKind.BLOCK, blockPools))
+				if (kindWeights.second > 0) addAll(allTemplates(TaskKind.ADVANCEMENT, advancementPools))
 			}.filter { (it.kind to it.id) !in used }.shuffled(random).take(remaining)
 			selected += fallback
 			if (selected.size < amount && kindWeights.third > 0) repeat(amount - selected.size) {
@@ -129,7 +123,6 @@ object TaskGenerator {
 		pools: TaskPools,
 		amount: Int,
 		ratios: Triple<Int, Int, Int>,
-		counts: Triple<Int, Int, Int>,
 		excluded: Set<Pair<TaskKind, Identifier>>,
 		random: Random,
 	): List<TaskTemplate> {
@@ -140,11 +133,11 @@ object TaskGenerator {
 				.filter { (kind to it) !in excluded }
 				.shuffled(random)
 				.take(wanted[index])
-				.map { TaskTemplate(kind, it, difficulty, counts.toList()[index]) }
+				.map { TaskTemplate(kind, it, difficulty) }
 		}
 		if (selected.size < amount) {
 			val used = selected.mapTo(mutableSetOf()) { it.id }
-			selected += allTemplates(kind, pools, counts)
+			selected += allTemplates(kind, pools)
 				.filter { it.id !in used && (kind to it.id) !in excluded }
 				.shuffled(random)
 				.take(amount - selected.size)
@@ -152,8 +145,8 @@ object TaskGenerator {
 		return selected
 	}
 
-	private fun allTemplates(kind: TaskKind, pools: TaskPools, counts: Triple<Int, Int, Int>) = Difficulty.entries.flatMapIndexed { index, difficulty ->
-		pools[difficulty].map { TaskTemplate(kind, it, difficulty, counts.toList()[index]) }
+	private fun allTemplates(kind: TaskKind, pools: TaskPools) = Difficulty.entries.flatMap { difficulty ->
+		pools[difficulty].map { TaskTemplate(kind, it, difficulty) }
 	}
 }
 

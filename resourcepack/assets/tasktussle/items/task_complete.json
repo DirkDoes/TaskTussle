@@ -1,0 +1,7 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "tasktussle:item/task_complete"
+  },
+  "oversized_in_gui": true
+}

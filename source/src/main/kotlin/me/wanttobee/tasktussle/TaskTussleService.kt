@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket
+import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket
 import net.minecraft.resources.Identifier
 import net.minecraft.server.MinecraftServer
@@ -15,7 +16,6 @@ import net.minecraft.server.level.ServerBossEvent
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.BossEvent
 import net.minecraft.world.SimpleMenuProvider
-import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.component.CustomData
@@ -36,6 +36,7 @@ class TaskTussleService {
 	private var timerBar: ServerBossEvent? = null
 	private var server: MinecraftServer? = null
 	private val delayedActions = mutableListOf<Pair<Int, () -> Unit>>()
+	private val deliverySpotLearned = mutableSetOf<java.util.UUID>()
 
 	fun prepare(server: MinecraftServer) {
 		this.server = server
@@ -69,8 +70,7 @@ class TaskTussleService {
 		val advancements = advancementPools ?: return fail(commander, "Cant start a game, task generation failed")
 		val ratios = Triple(settings.easyRatio, settings.mediumRatio, settings.hardRatio)
 		val weights = Triple(settings.blockWeight, settings.advancementWeight, settings.clickWeight)
-		val counts = Triple(settings.easyObtainCount, settings.mediumObtainCount, settings.hardObtainCount)
-		val mutual = TaskGenerator.generate(settings.mutualTasks, blocks, advancements, ratios, weights, counts)?.map(::capObtainAmount)
+		val mutual = TaskGenerator.generate(settings.mutualTasks, blocks, advancements, ratios, weights)
 			?: return fail(commander, "Cant start a game, task generation failed")
 
 		for (team in teams) {
@@ -80,9 +80,9 @@ class TaskTussleService {
 				settings.mutualTasks == 25 -> mutual
 				settings.mutualTasks < 25 -> {
 					val unique = TaskGenerator.generate(
-						25 - settings.mutualTasks, blocks, advancements, ratios, weights, counts,
+						25 - settings.mutualTasks, blocks, advancements, ratios, weights,
 						mutual.map { it.kind to it.id }.toSet(),
-					)?.map(::capObtainAmount) ?: return fail(commander, "Cant start a game, task generation failed")
+					) ?: return fail(commander, "Cant start a game, task generation failed")
 					mutual + unique
 				}
 				else -> mutual.shuffled().take(25)
@@ -92,12 +92,18 @@ class TaskTussleService {
 
 		val created = TussleGame(teams, settings.gameMinutes * 60)
 		game = created
+		deliverySpotLearned.clear()
 		listedTeams = teams
 		resetAllAdvancements(server, created)
 		server.playerList.players.filter { player -> teams.any { player.uuid in it.members } }.forEach { player ->
 			giveCard(player)
+			if (settings.handInItems) giveDeliverySpot(player)
 			player.sendSystemMessage(message("Click with the Task Tussle Card in your hand to see your teams progress.", ChatFormatting.GREEN))
-			if (settings.blockWeight > 0) player.sendSystemMessage(message("(Obtain Task) Obtain the shown block; click its task to submit it.", ChatFormatting.GRAY))
+			if (settings.blockWeight > 0) player.sendSystemMessage(message(
+				if (settings.handInItems) "(Obtain Task) Carry the shown block and click the delivery spot."
+				else "(Obtain Task) Obtain the shown block.",
+				ChatFormatting.GRAY,
+			))
 			player.sendSystemMessage(message("The goal is set to: ${settings.winningCondition}", ChatFormatting.GREEN))
 		}
 		if (settings.gameMinutes > 0) createTimerBar(server, created)
@@ -122,6 +128,7 @@ class TaskTussleService {
 		if (game == null) return fail(commander, "trying to stop a game that doesn't exists")
 		game = null
 		delayedActions.clear()
+		deliverySpotLearned.clear()
 		listedTeams = emptyList()
 		clearTimerBar()
 		server.playerList.players.forEach(::removeGameItems)
@@ -212,22 +219,25 @@ class TaskTussleService {
 	}
 
 	private fun submitObtain(server: MinecraftServer, active: TussleGame, team: TussleTeam, task: BingoTask, player: ServerPlayer): Boolean {
+		if (settings.handInItems) return false
 		val wanted = BuiltInRegistries.BLOCK.getValue(task.template.id).asItem()
 		val stacks = buildList {
 			for (slot in 0 until player.inventory.containerSize) add(player.inventory.getItem(slot))
 			add(player.containerMenu.carried)
 		}
-		if (!settings.handInItems) return stacks.sumOf { if (it.item == wanted) it.count else 0 } >= task.template.amount && complete(server, active, team, task, player)
+		return stacks.any { it.item == wanted && !it.isEmpty } && complete(server, active, team, task, player)
+	}
 
-		val consumed = consumeMatching(stacks, wanted, task.template.amount - task.obtained)
-		if (consumed == 0) return false
-		task.obtained += consumed
-		task.contributors += player.gameProfile.name
+	fun clickDeliverySpot(player: ServerPlayer, stack: ItemStack) {
+		val active = game ?: return
+		if (!settings.handInItems) return
+		if (deliverySpotLearned.add(player.uuid)) giveDeliverySpot(player)
+		if (stack.isEmpty || active.paused || active.finished) return
+		val team = active.teams.find { player.uuid in it.members } ?: return
+		val task = deliveryTask(team.tasks, stack.item) ?: return
+		stack.shrink(1)
 		player.inventory.setChanged()
-		player.containerMenu.broadcastChanges()
-		if (task.obtained >= task.template.amount) return complete(server, active, team, task, player)
-		refreshOpenCards(server)
-		return true
+		complete(player.level().server, active, team, task, player)
 	}
 
 	fun beginTeamSelection(starter: ServerPlayer, teamCount: Int, startsGame: Boolean): Boolean {
@@ -314,7 +324,10 @@ class TaskTussleService {
 	}
 
 	fun onJoin(player: ServerPlayer) {
-		if (game?.teams?.any { player.uuid in it.members } == true) giveCard(player)
+		if (game?.teams?.any { player.uuid in it.members } == true) {
+			giveCard(player)
+			if (settings.handInItems) giveDeliverySpot(player)
+		}
 		if (selection != null) giveTeamNavigator(player)
 		if (selection?.starter == player.uuid) giveTeamFinisher(player)
 	}
@@ -334,6 +347,7 @@ class TaskTussleService {
 	fun isCard(stack: ItemStack): Boolean = hasMarker(stack, CARD_MARKER)
 	fun isTeamNavigator(stack: ItemStack): Boolean = hasMarker(stack, TEAM_NAVIGATOR_MARKER)
 	fun isTeamFinisher(stack: ItemStack): Boolean = hasMarker(stack, TEAM_FINISHER_MARKER)
+	fun isDeliverySpot(stack: ItemStack): Boolean = hasMarker(stack, DELIVERY_SPOT_MARKER)
 
 	private fun checkTasks(server: MinecraftServer, active: TussleGame) {
 		for (team in active.teams) for (player in team.onlinePlayers(server.playerList.players)) for (task in team.tasks.filter { !it.completed && !it.failed }) {
@@ -351,19 +365,18 @@ class TaskTussleService {
 		task.contributors += player.gameProfile.name
 		server.playerList.players.forEach { recipient ->
 			val sameTeam = recipient.uuid in team.members
-			if (settings.cardVisibility == "visible" || sameTeam) recipient.sendSystemMessage(completionMessage(team, task))
-			else if (settings.cardVisibility != "hidden") recipient.sendSystemMessage(completionMessage(team, null))
+			if (settings.cardVisibility == "visible" || sameTeam) recipient.sendSystemMessage(completionMessage(player.gameProfile.name, team.color, task))
+			else if (settings.cardVisibility != "hidden") recipient.sendSystemMessage(completionMessage(player.gameProfile.name, team.color, null))
 		}
 		val won = hasWon(team.tasks, settings.winningCondition)
-		val memberIds = team.onlinePlayers(server.playerList.players).map { member ->
+		team.onlinePlayers(server.playerList.players).forEach { member ->
 			if (!won) TaskTussleSounds.rewardMid(member)
-			member.uuid
 		}
 		refreshOpenCards(server)
 		if (won) finish(server, team)
-		memberIds.forEach { memberId -> after(server, TASK_ITEM_DISPLAY_DELAY_TICKS) {
-			server.playerList.getPlayer(memberId)?.let { showCompletionItem(it, task) }
-		} }
+		after(server, TASK_ITEM_DISPLAY_DELAY_TICKS) {
+			server.playerList.getPlayer(player.uuid)?.let { showCompletionItem(it, task) }
+		}
 		return true
 	}
 
@@ -382,7 +395,11 @@ class TaskTussleService {
 				showResultTitle(server, player, "DRAW", ChatFormatting.YELLOW)
 				player.sendSystemMessage(message("The game drew", ChatFormatting.YELLOW))
 			} else {
-				showResultTitle(server, player, if (ownTeam === winner) "VICTORY" else "DEFEAT", if (ownTeam === winner) ChatFormatting.GOLD else ChatFormatting.RED)
+				if (ownTeam === winner) {
+					showResultTitle(server, player, "VICTORY", ChatFormatting.GOLD, Component.literal(winner.displayName()).withStyle(winner.color))
+				} else {
+					showResultTitle(server, player, "${winner.displayName()} won", winner.color, Component.literal("You lost").withStyle(ChatFormatting.RED))
+				}
 				player.sendSystemMessage(message("${winner.displayName()} Won the game", winner.color))
 			}
 		}
@@ -399,7 +416,8 @@ class TaskTussleService {
 		delayedActions += server.tickCount + ticks to action
 	}
 
-	private fun showResultTitle(server: MinecraftServer, player: ServerPlayer, text: String, color: ChatFormatting) {
+	private fun showResultTitle(server: MinecraftServer, player: ServerPlayer, text: String, color: ChatFormatting, subtitle: Component? = null) {
+		subtitle?.let { player.connection.send(ClientboundSetSubtitleTextPacket(it)) }
 		titleFrames(text, minOf(TITLE_REVEAL_TICKS, GAME_RESULT_DELAY_TICKS)).forEach { (delay, frame) ->
 			val send = {
 				server.playerList.getPlayer(player.uuid)?.connection?.apply {
@@ -430,30 +448,39 @@ class TaskTussleService {
 		return teams
 	}
 
-	private fun capObtainAmount(template: TaskTemplate): TaskTemplate {
-		if (template.kind != TaskKind.BLOCK) return template
-		val maxAmount = BuiltInRegistries.BLOCK.getValue(template.id).asItem().defaultMaxStackSize * 27
-		return template.copy(amount = minOf(template.amount, maxAmount))
-	}
-
 	private fun giveCard(player: ServerPlayer) = giveAt(
 		player, 8, Items.PAPER, "Task Tussle Card", ChatFormatting.GREEN, CARD_MARKER,
 		BINGO_CARD_MODEL.takeIf { TaskTussleResourcePackServer.active },
 	)
-	private fun giveTeamNavigator(player: ServerPlayer) = giveAt(player, 8, Items.TNT, "Team Navigator Tool", ChatFormatting.RED, TEAM_NAVIGATOR_MARKER)
+	private fun giveTeamNavigator(player: ServerPlayer) = giveAt(
+		player, 8, Items.PAPER, "Teams", ChatFormatting.BLUE, TEAM_NAVIGATOR_MARKER,
+		TEAMS_MODEL.takeIf { TaskTussleResourcePackServer.active },
+	)
 	private fun giveTeamFinisher(player: ServerPlayer) = giveAt(player, 7, Items.FIRE_CHARGE, "Detonate Current Teams", ChatFormatting.GOLD, TEAM_FINISHER_MARKER)
+
+	private fun giveDeliverySpot(player: ServerPlayer) {
+		val displaced = player.inventory.getItem(DELIVERY_SPOT_SLOT).takeUnless(::isDeliverySpot)?.takeUnless(ItemStack::isEmpty)?.copy()
+		giveAt(
+			player, DELIVERY_SPOT_SLOT, Items.PAPER, "Delivery spot", ChatFormatting.GOLD, DELIVERY_SPOT_MARKER,
+			if (player.uuid in deliverySpotLearned) DELIVERY_SPOT_MODEL else DELIVERY_SPOT_SIGN_MODEL,
+		)
+		if (displaced != null && !player.inventory.add(displaced)) player.drop(displaced, false)
+	}
 
 	private fun giveAt(player: ServerPlayer, slot: Int, item: net.minecraft.world.item.Item, name: String, color: ChatFormatting, marker: String, model: Identifier? = null) {
 		for (index in 0 until player.inventory.containerSize) if (hasMarker(player.inventory.getItem(index), marker)) player.inventory.setItem(index, ItemStack.EMPTY)
 		player.inventory.setItem(slot, ItemStack(item).apply {
-			set(DataComponents.CUSTOM_NAME, message(name, color))
+			set(DataComponents.CUSTOM_NAME, Component.literal(name).withStyle { it.withColor(color).withItalic(false) })
 			set(DataComponents.CUSTOM_DATA, CustomData.of(CompoundTag().apply { putString(TOOL_MARKER, marker) }))
 			if (model != null) set(DataComponents.ITEM_MODEL, model)
 		})
 	}
 
 	private fun removeGameItems(player: ServerPlayer) {
-		for (slot in 0 until player.inventory.containerSize) if (isCard(player.inventory.getItem(slot))) player.inventory.setItem(slot, ItemStack.EMPTY)
+		for (slot in 0 until player.inventory.containerSize) {
+			val stack = player.inventory.getItem(slot)
+			if (isCard(stack) || isDeliverySpot(stack)) player.inventory.setItem(slot, ItemStack.EMPTY)
+		}
 	}
 
 	private fun removeTeamItems(player: ServerPlayer) {
@@ -475,6 +502,7 @@ class TaskTussleService {
 	private fun restoreForcedItems(server: MinecraftServer) {
 		game?.teams?.flatMap(TussleTeam::members)?.toSet()?.let { members ->
 			server.playerList.players.filter { it.uuid in members && !hasMarker(it, CARD_MARKER) }.forEach(::giveCard)
+			if (settings.handInItems) server.playerList.players.filter { it.uuid in members && !hasMarker(it, DELIVERY_SPOT_MARKER) }.forEach(::giveDeliverySpot)
 		}
 		selection?.let { current ->
 			server.playerList.players.filter { !hasMarker(it, TEAM_NAVIGATOR_MARKER) }.forEach(::giveTeamNavigator)
@@ -552,24 +580,30 @@ class TaskTussleService {
 		player.connection.send(ClientboundEntityEventPacket(player, 35))
 		player.connection.send(ClientboundContainerSetSlotPacket(menu.containerId, menu.stateId, InventoryMenu.SHIELD_SLOT, player.offhandItem))
 	}
-	private fun completionMessage(team: TussleTeam, task: BingoTask?): Component = Component.literal(team.displayName()).withStyle(team.color)
+	private fun completionMessage(playerName: String, teamColor: ChatFormatting, task: BingoTask?): Component = Component.literal(playerName).withStyle(teamColor)
 		.append(Component.literal(if (task == null) " got a task" else " got a ${taskKindName(task)} ").withStyle(ChatFormatting.WHITE))
 		.apply { if (task != null) append(Component.literal("(${taskName(task)})").withStyle(ChatFormatting.GRAY)) }
 
 	companion object {
 		private const val TASK_ITEM_DISPLAY_DELAY_TICKS = 8
-		private const val TITLE_REVEAL_TICKS = 40
+		private const val TITLE_REVEAL_TICKS = 30
 		private const val GAME_RESULT_DELAY_TICKS = 122
 		private const val TOOL_MARKER = "tasktussle_tool"
 		private const val CARD_MARKER = "card"
 		private const val TEAM_NAVIGATOR_MARKER = "team_navigator"
 		private const val TEAM_FINISHER_MARKER = "team_finisher"
+		private const val DELIVERY_SPOT_MARKER = "delivery_spot"
+		private const val DELIVERY_SPOT_SLOT = 17
 		private val BINGO_CARD_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "bingo_card")
+		private val TEAMS_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "teams")
+		private val DELIVERY_SPOT_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "delivering_spot")
+		private val DELIVERY_SPOT_SIGN_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "delivering_spot_sign")
 
 		@JvmStatic
 		fun isForcedItem(stack: ItemStack): Boolean = isForcedMarker(stack.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr(TOOL_MARKER, ""))
 
-		internal fun isForcedMarker(marker: String?) = marker == CARD_MARKER || marker == TEAM_NAVIGATOR_MARKER || marker == TEAM_FINISHER_MARKER
+		internal fun isForcedMarker(marker: String?) =
+			marker == CARD_MARKER || marker == TEAM_NAVIGATOR_MARKER || marker == TEAM_FINISHER_MARKER || marker == DELIVERY_SPOT_MARKER
 
 		fun clearNonForcedItems(player: ServerPlayer) {
 			for (slot in 0 until player.inventory.containerSize) {
@@ -603,16 +637,10 @@ class TaskTussleService {
 	}
 }
 
-internal fun consumeMatching(stacks: Iterable<ItemStack>, wanted: Item, amount: Int): Int {
-	val matching = stacks.filter { it.item == wanted }
-	val amounts = takeAmounts(matching.map(ItemStack::getCount), amount)
-	matching.zip(amounts).forEach { (stack, taken) -> stack.shrink(taken) }
-	return amounts.sum()
-}
 
-internal fun takeAmounts(stackCounts: List<Int>, amount: Int): List<Int> {
-	var remaining = amount.coerceAtLeast(0)
-	return stackCounts.map { count -> minOf(count, remaining).also { remaining -= it } }
+internal fun deliveryTask(tasks: List<BingoTask>, item: net.minecraft.world.item.Item): BingoTask? = tasks.firstOrNull {
+	!it.completed && !it.failed && it.template.kind == TaskKind.BLOCK &&
+		BuiltInRegistries.BLOCK.getValue(it.template.id).asItem() == item
 }
 
 internal fun <T> takeDue(tick: Int, scheduled: MutableList<Pair<Int, T>>): List<T> {

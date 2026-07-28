@@ -1,6 +1,7 @@
 package me.wanttobee.tasktussle.mixin
 
 import me.wanttobee.tasktussle.TaskTussleService
+import me.wanttobee.tasktussle.TaskTussleMod
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.inventory.AbstractContainerMenu
@@ -21,9 +22,16 @@ abstract class AbstractContainerMenuMixin {
 
 	@Inject(method = ["clicked(IILnet/minecraft/world/inventory/ContainerInput;Lnet/minecraft/world/entity/player/Player;)V"], at = [At("HEAD")], cancellable = true)
 	private fun preventForcedItemMove(slotId: Int, button: Int, input: ContainerInput, player: Player, callback: CallbackInfo) {
+		val clicked = if (slotId >= 0 && isValidSlotIndex(slotId)) getSlot(slotId).item else ItemStack.EMPTY
+		if (player is ServerPlayer && TaskTussleMod.isDeliverySpot(clicked)) {
+			TaskTussleMod.clickDeliverySpot(player, getCarried())
+			callback.cancel()
+			player.containerMenu.broadcastFullState()
+			return
+		}
 		if (
 			TaskTussleService.isForcedItem(getCarried()) ||
-			slotId >= 0 && isValidSlotIndex(slotId) && TaskTussleService.isForcedItem(getSlot(slotId).item) ||
+			TaskTussleService.isForcedItem(clicked) ||
 			input == ContainerInput.SWAP && button in 0 until player.inventory.containerSize &&
 				TaskTussleService.isForcedItem(player.inventory.getItem(button))
 		) {
