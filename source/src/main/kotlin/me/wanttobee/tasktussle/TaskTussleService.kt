@@ -14,13 +14,18 @@ import net.minecraft.resources.Identifier
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerBossEvent
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.server.permissions.Permissions
 import net.minecraft.world.BossEvent
+import net.minecraft.world.MenuProvider
 import net.minecraft.world.SimpleMenuProvider
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
+import net.minecraft.world.item.SmithingTemplateItem
 import net.minecraft.world.item.component.CustomData
+import net.minecraft.world.item.component.CustomModelData
 import net.minecraft.world.item.component.DeathProtection
 import net.minecraft.world.item.component.ResolvableProfile
+import net.minecraft.world.item.component.TooltipDisplay
 import net.minecraft.world.inventory.InventoryMenu
 import net.minecraft.world.level.gamerules.GameRules
 import kotlin.math.max
@@ -92,6 +97,8 @@ class TaskTussleService {
 
 		val created = TussleGame(teams, settings.gameMinutes * 60)
 		game = created
+		server.playerList.players.forEach(::removeSettingsTool)
+		server.playerList.players.forEach(::removeTaskBrowser)
 		deliverySpotLearned.clear()
 		listedTeams = teams
 		resetAllAdvancements(server, created)
@@ -132,6 +139,8 @@ class TaskTussleService {
 		listedTeams = emptyList()
 		clearTimerBar()
 		server.playerList.players.forEach(::removeGameItems)
+		server.playerList.players.forEach(::giveSettingsTool)
+		server.playerList.players.forEach(::giveTaskBrowser)
 		commander?.sendSystemMessage(tagged("stopped the running game", ChatFormatting.GREEN))
 		return true
 	}
@@ -154,40 +163,138 @@ class TaskTussleService {
 		val target = requestedTeam?.let { index -> active.teams.find { it.index == index } } ?: own
 			?: return fail(player, "no game to open")
 		if (target != own && !active.finished && settings.cardVisibility != "visible") return false
-		player.openMenu(SimpleMenuProvider(
+		openMenu(player, SimpleMenuProvider(
 			{ id, inventory, _ -> TaskTussleMenus.CardMenu(id, inventory, this, active, target, own) },
 			Component.literal("Bingo"),
 		))
 		return true
 	}
 
-	fun openSettings(player: ServerPlayer) = player.openMenu(SimpleMenuProvider(
+	fun openSettings(player: ServerPlayer) = openMenu(player, SimpleMenuProvider(
 		{ id, inventory, _ -> TaskTussleMenus.SettingsMenu(id, inventory, this) }, Component.literal("Task Tussle Settings"),
 	))
 
-	fun openManagerSettings(player: ServerPlayer, manager: String) = player.openMenu(SimpleMenuProvider(
+	fun openReadOnlySettings(player: ServerPlayer): Boolean {
+		if (game != null || selection != null) return false
+		openMenu(player, SimpleMenuProvider(
+			{ id, inventory, _ -> TaskTussleMenus.SettingsMenu(id, inventory, this, true) }, Component.literal("Task Tussle Settings"),
+		))
+		return true
+	}
+
+	fun openManagerSettings(player: ServerPlayer, manager: String) = openMenu(player, SimpleMenuProvider(
 		{ id, inventory, _ -> TaskTussleMenus.ManagerSettingsMenu(id, inventory, this, manager) },
 		Component.literal("${manager.replaceFirstChar(Char::uppercase)} Settings"),
 	))
 
-	fun openTimeSettings(player: ServerPlayer) = player.openMenu(SimpleMenuProvider(
+	fun openTimeSettings(player: ServerPlayer) = openMenu(player, SimpleMenuProvider(
 		{ id, inventory, _ -> TaskTussleMenus.TimeSettingsMenu(id, inventory, this) }, Component.literal("Time Settings"),
 	))
 
-	fun openWinConditions(player: ServerPlayer) = player.openMenu(SimpleMenuProvider(
+	fun openWinConditions(player: ServerPlayer) = openMenu(player, SimpleMenuProvider(
 		{ id, inventory, _ -> TaskTussleMenus.WinConditionMenu(id, inventory, this) }, Component.literal("Win condition picker"),
 	))
 
-	fun openFilePicker(player: ServerPlayer, blocks: Boolean, page: Int = 0) = player.openMenu(SimpleMenuProvider(
-		{ id, inventory, _ -> TaskTussleMenus.FilePickerMenu(id, inventory, this, blocks, page) }, Component.literal("File Name picker"),
+	fun openTaskBrowser(player: ServerPlayer): Boolean {
+		if (game != null || selection != null) return false
+		openMenu(player, SimpleMenuProvider(
+			{ id, inventory, _ -> TaskTussleMenus.CatalogTypeMenu(id, inventory, this) }, Component.literal("Task Browser"),
+		))
+		return true
+	}
+
+	fun openCatalogFiles(player: ServerPlayer, blocks: Boolean, selected: String? = null): Boolean {
+		if (game != null || selection != null) return false
+		openMenu(player, SimpleMenuProvider(
+			{ id, inventory, _ -> TaskTussleMenus.FilePickerMenu(id, inventory, this, blocks, true, selected) }, Component.literal("Task Files"),
+		))
+		return true
+	}
+
+	fun returnToCatalogFiles(player: ServerPlayer, blocks: Boolean, selected: String) = after(player.level().server, 1) {
+		if (player.containerMenu === player.inventoryMenu) openCatalogFiles(player, blocks, selected)
+	}
+
+	fun openFilePicker(player: ServerPlayer, blocks: Boolean) = openMenu(player, SimpleMenuProvider(
+		{ id, inventory, _ -> TaskTussleMenus.FilePickerMenu(id, inventory, this, blocks) }, Component.literal("File Name picker"),
 	))
 
+	fun openCatalogCreation(player: ServerPlayer, blocks: Boolean): Boolean {
+		if (game != null || selection != null) return false
+		openMenu(player, SimpleMenuProvider(
+			{ id, inventory, _ -> TaskTussleMenus.CatalogCreateMenu(id, inventory, this, blocks) }, Component.literal("Create Task File"),
+		))
+		return true
+	}
+
+	fun openCatalogContents(player: ServerPlayer, blocks: Boolean, file: String): Boolean {
+		if (game != null || selection != null) return false
+		val pools = runCatching { if (blocks) TaskCatalog.blocks(file) else TaskCatalog.advancements(player.level().server, file) }
+			.getOrElse { return fail(player, it.message ?: "Invalid task file") }
+		val removed = TaskCatalog.removed(player.level().server, blocks, pools)
+		openMenu(player, SimpleMenuProvider(
+			{ id, inventory, _ -> TaskTussleMenus.CatalogContentsMenu(id, inventory, this, blocks, file, pools, removed) }, Component.literal(file),
+		))
+		return true
+	}
+
+	fun catalogFiles(blocks: Boolean): List<CatalogFile> = TaskCatalog.catalogFiles(blocks)
+
+	fun canEditCatalog(player: ServerPlayer, blocks: Boolean, file: String): Boolean = runCatching {
+		mayEditCatalog(TaskCatalog.owner(blocks, file), player.uuid, isOperator(player))
+	}.getOrDefault(false)
+
+	fun createCatalog(player: ServerPlayer, blocks: Boolean, generated: Boolean): Boolean {
+		val pools = if (generated) TaskCatalog.generated(player.level().server, blocks) else TaskPools(emptyList(), emptyList(), emptyList())
+		val file = saveCatalog(player, blocks, pools) ?: return false
+		return openCatalogFiles(player, blocks, file)
+	}
+
+	fun duplicateCatalog(player: ServerPlayer, blocks: Boolean, source: String): String? {
+		val pools = runCatching { if (blocks) TaskCatalog.blocks(source) else TaskCatalog.advancements(player.level().server, source) }
+			.getOrElse { fail(player, it.message ?: "Could not duplicate task file"); return null }
+		return saveCatalog(player, blocks, pools)
+	}
+
+	fun moveCatalogTask(player: ServerPlayer, blocks: Boolean, file: String, id: Identifier, target: Difficulty?): Pair<TaskPools, List<Identifier>>? {
+		if (!canEditCatalog(player, blocks, file)) { fail(player, "You cannot edit this task file."); return null }
+		val current = runCatching { if (blocks) TaskCatalog.blocks(file) else TaskCatalog.advancements(player.level().server, file) }
+			.getOrElse { fail(player, it.message ?: "Could not edit task file"); return null }
+		val updated = moveTaskBetweenTiers(current, id, target)
+		runCatching { TaskCatalog.update(blocks, file, updated) }.getOrElse { fail(player, it.message ?: "Could not save task file"); return null }
+		if (file == if (blocks) settings.blocksFile else settings.advancementsFile) runCatching(::reloadPools)
+		return updated to TaskCatalog.removed(player.level().server, blocks, updated)
+	}
+	fun deleteCatalog(player: ServerPlayer, blocks: Boolean, file: String): Boolean {
+		if (!canEditCatalog(player, blocks, file)) return fail(player, "You do not own this task file.")
+		runCatching { TaskCatalog.delete(blocks, file) }.getOrElse { return fail(player, it.message ?: "Could not delete task file") }
+		val current = if (blocks) settings.blocksFile else settings.advancementsFile
+		if (current == file) TaskCatalog.catalogFiles(blocks).firstOrNull()?.name?.let { replacement ->
+			if (blocks) settings.blocksFile = replacement else settings.advancementsFile = replacement
+			runCatching(::reloadPools)
+		}
+		return true
+	}
+
+	private fun saveCatalog(player: ServerPlayer, blocks: Boolean, pools: TaskPools): String? {
+		val operator = isOperator(player)
+		val owned = TaskCatalog.ownedFiles(player.uuid)
+		val total = TaskCatalog.totalFiles(blocks)
+		if (!mayCreateCatalog(owned, total, operator)) {
+			fail(player, if (total >= 36) "This task list already has 36 files." else "You can create at most 3 task files.")
+			return null
+		}
+		return runCatching { TaskCatalog.create(blocks, player.uuid, player.gameProfile.name, pools) }
+			.getOrElse { fail(player, it.message ?: "Could not create task file"); null }
+	}
+
+	private fun isOperator(player: ServerPlayer) = player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)
 	fun openTaskOptions(player: ServerPlayer, teamIndex: Int, taskIndex: Int) {
 		val active = game ?: return
 		val team = active.teams.find { it.index == teamIndex } ?: return
 		val task = team.tasks.getOrNull(taskIndex) ?: return
 		if (team.succeedTokensMax <= 0) return
-		player.openMenu(SimpleMenuProvider(
+		openMenu(player, SimpleMenuProvider(
 			{ id, inventory, _ -> TaskTussleMenus.TaskOptionsMenu(id, inventory, this, teamIndex, taskIndex) },
 			Component.literal(taskName(task)),
 		))
@@ -243,6 +350,8 @@ class TaskTussleService {
 	fun beginTeamSelection(starter: ServerPlayer, teamCount: Int, startsGame: Boolean): Boolean {
 		if (teamCount !in 2..54) return fail(starter, "team count has to be from 2 to 54")
 		selection?.let { clearSelection(starter.level().server) }
+		starter.level().server.playerList.players.forEach(::removeSettingsTool)
+		starter.level().server.playerList.players.forEach(::removeTaskBrowser)
 		selection = TeamSelection(teamCount, starter.uuid, startsGame = startsGame)
 		starter.level().server.playerList.players.forEach(::giveTeamNavigator)
 		giveTeamFinisher(starter)
@@ -252,7 +361,7 @@ class TaskTussleService {
 
 	fun openTeamMaker(player: ServerPlayer): Boolean {
 		val current = selection ?: return false
-		player.openMenu(SimpleMenuProvider(
+		openMenu(player, SimpleMenuProvider(
 			{ id, inventory, _ -> TaskTussleMenus.TeamMakerMenu(id, inventory, this, current) }, Component.literal("Team Maker"),
 		))
 		return true
@@ -279,6 +388,8 @@ class TaskTussleService {
 		selection = null
 		server.playerList.players.forEach(::removeTeamItems)
 		listedTeams = teams
+		if (!current.startsGame) server.playerList.players.forEach(::giveSettingsTool)
+		if (!current.startsGame) server.playerList.players.forEach(::giveTaskBrowser)
 		return !current.startsGame || startWithTeams(server, player, teams)
 	}
 
@@ -324,6 +435,8 @@ class TaskTussleService {
 	}
 
 	fun onJoin(player: ServerPlayer) {
+		if (game == null && selection == null) giveSettingsTool(player)
+		if (game == null && selection == null) giveTaskBrowser(player)
 		if (game?.teams?.any { player.uuid in it.members } == true) {
 			giveCard(player)
 			if (settings.handInItems) giveDeliverySpot(player)
@@ -348,6 +461,8 @@ class TaskTussleService {
 	fun isTeamNavigator(stack: ItemStack): Boolean = hasMarker(stack, TEAM_NAVIGATOR_MARKER)
 	fun isTeamFinisher(stack: ItemStack): Boolean = hasMarker(stack, TEAM_FINISHER_MARKER)
 	fun isDeliverySpot(stack: ItemStack): Boolean = hasMarker(stack, DELIVERY_SPOT_MARKER)
+	fun isSettingsTool(stack: ItemStack): Boolean = hasMarker(stack, SETTINGS_MARKER)
+	fun isTaskBrowser(stack: ItemStack): Boolean = hasMarker(stack, TASK_BROWSER_MARKER)
 
 	private fun checkTasks(server: MinecraftServer, active: TussleGame) {
 		for (team in active.teams) for (player in team.onlinePlayers(server.playerList.players)) for (task in team.tasks.filter { !it.completed && !it.failed }) {
@@ -458,6 +573,18 @@ class TaskTussleService {
 	)
 	private fun giveTeamFinisher(player: ServerPlayer) = giveAt(player, 7, Items.FIRE_CHARGE, "Detonate Current Teams", ChatFormatting.GOLD, TEAM_FINISHER_MARKER)
 
+	private fun giveSettingsTool(player: ServerPlayer) {
+		val displaced = player.inventory.getItem(SETTINGS_SLOT).takeUnless(::isSettingsTool)?.takeUnless(ItemStack::isEmpty)?.copy()
+		giveAt(player, SETTINGS_SLOT, Items.COMPASS, "Task Tussle Settings", ChatFormatting.AQUA, SETTINGS_MARKER)
+		if (displaced != null && !player.inventory.add(displaced)) player.drop(displaced, false)
+	}
+
+	private fun giveTaskBrowser(player: ServerPlayer) {
+		val displaced = player.inventory.getItem(TASK_BROWSER_SLOT).takeUnless(::isTaskBrowser)?.takeUnless(ItemStack::isEmpty)?.copy()
+		giveAt(player, TASK_BROWSER_SLOT, Items.MAP, "Task Browser", ChatFormatting.GREEN, TASK_BROWSER_MARKER)
+		if (displaced != null && !player.inventory.add(displaced)) player.drop(displaced, false)
+	}
+
 	private fun giveDeliverySpot(player: ServerPlayer) {
 		val displaced = player.inventory.getItem(DELIVERY_SPOT_SLOT).takeUnless(::isDeliverySpot)?.takeUnless(ItemStack::isEmpty)?.copy()
 		giveAt(
@@ -490,9 +617,19 @@ class TaskTussleService {
 		}
 	}
 
+	private fun removeSettingsTool(player: ServerPlayer) {
+		for (slot in 0 until player.inventory.containerSize) if (isSettingsTool(player.inventory.getItem(slot))) player.inventory.setItem(slot, ItemStack.EMPTY)
+	}
+
+	private fun removeTaskBrowser(player: ServerPlayer) {
+		for (slot in 0 until player.inventory.containerSize) if (isTaskBrowser(player.inventory.getItem(slot))) player.inventory.setItem(slot, ItemStack.EMPTY)
+	}
+
 	private fun clearSelection(server: MinecraftServer) {
 		selection = null
 		server.playerList.players.forEach(::removeTeamItems)
+		if (game == null) server.playerList.players.forEach(::giveSettingsTool)
+		if (game == null) server.playerList.players.forEach(::giveTaskBrowser)
 	}
 
 	private fun refreshOpenCards(server: MinecraftServer) = server.playerList.players.forEach { player ->
@@ -500,6 +637,8 @@ class TaskTussleService {
 	}
 
 	private fun restoreForcedItems(server: MinecraftServer) {
+		if (game == null && selection == null) server.playerList.players.filter { !hasMarker(it, SETTINGS_MARKER) }.forEach(::giveSettingsTool)
+		if (game == null && selection == null) server.playerList.players.filter { !hasMarker(it, TASK_BROWSER_MARKER) }.forEach(::giveTaskBrowser)
 		game?.teams?.flatMap(TussleTeam::members)?.toSet()?.let { members ->
 			server.playerList.players.filter { it.uuid in members && !hasMarker(it, CARD_MARKER) }.forEach(::giveCard)
 			if (settings.handInItems) server.playerList.players.filter { it.uuid in members && !hasMarker(it, DELIVERY_SPOT_MARKER) }.forEach(::giveDeliverySpot)
@@ -536,11 +675,40 @@ class TaskTussleService {
 		stack.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr(TOOL_MARKER, "") == marker
 	private fun hasMarker(player: ServerPlayer, marker: String): Boolean =
 		(0 until player.inventory.containerSize).any { hasMarker(player.inventory.getItem(it), marker) }
+	private fun openMenu(player: ServerPlayer, provider: MenuProvider) = player.containerMenu.takeUnless { it === player.inventoryMenu }?.let { previous ->
+		player.containerMenu = player.inventoryMenu
+		player.openMenu(provider).also { opened ->
+			if (opened.isEmpty) player.containerMenu = previous
+			else { previous.removed(player); player.inventoryMenu.transferState(previous) }
+		}
+	} ?: player.openMenu(provider)
 	private fun fail(player: ServerPlayer?, text: String): Boolean {
 		player?.sendSystemMessage(tagged(text, ChatFormatting.RED))
 		return false
 	}
 	private fun log(text: String) { if (logEnabled) println("[Task Tussle] $text") }
+
+	fun catalogName(blocks: Boolean, id: Identifier): String = if (blocks) BuiltInRegistries.BLOCK.getValue(id).name.string
+	else server?.advancements?.get(id)?.value?.display?.orElse(null)?.title?.string
+		?: id.path.substringAfterLast('/').replace('_', ' ').replaceFirstChar(Char::uppercase)
+
+	fun advancementDescription(id: Identifier): String? =
+		server?.advancements?.get(id)?.value?.display?.orElse(null)?.description?.string?.takeIf(String::isNotBlank)
+
+	fun advancementIcon(id: Identifier): ItemStack {
+		if (!settings.customAdvancementIcons) return ItemStack(Items.KNOWLEDGE_BOOK)
+		val icon = server?.advancements?.get(id)?.value?.display?.orElse(null)?.icon?.create() ?: ItemStack(Items.KNOWLEDGE_BOOK)
+		return (if (icon.item is SmithingTemplateItem) ItemStack(Items.PAPER) else icon).apply {
+			set(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.DEFAULT
+				.withHidden(DataComponents.ATTRIBUTE_MODIFIERS, true)
+				.withHidden(DataComponents.POT_DECORATIONS, true)
+				.withHidden(DataComponents.BANNER_PATTERNS, true))
+			if (id.namespace == "minecraft") {
+				set(DataComponents.ITEM_MODEL, ADVANCEMENT_ICON_MODEL)
+				set(DataComponents.CUSTOM_MODEL_DATA, CustomModelData(emptyList(), emptyList(), listOf(id.toString()), emptyList()))
+			}
+		}
+	}
 
 	fun taskName(task: BingoTask): String = when (task.template.kind) {
 		TaskKind.BLOCK -> BuiltInRegistries.BLOCK.getValue(task.template.id).name.string
@@ -593,17 +761,22 @@ class TaskTussleService {
 		private const val TEAM_NAVIGATOR_MARKER = "team_navigator"
 		private const val TEAM_FINISHER_MARKER = "team_finisher"
 		private const val DELIVERY_SPOT_MARKER = "delivery_spot"
+		private const val SETTINGS_MARKER = "settings"
+		private const val TASK_BROWSER_MARKER = "task_browser"
 		private const val DELIVERY_SPOT_SLOT = 17
+		private const val SETTINGS_SLOT = 4
+		private const val TASK_BROWSER_SLOT = 5
 		private val BINGO_CARD_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "bingo_card")
 		private val TEAMS_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "teams")
 		private val DELIVERY_SPOT_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "delivering_spot")
 		private val DELIVERY_SPOT_SIGN_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "delivering_spot_sign")
+		private val ADVANCEMENT_ICON_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "advancement_icon")
 
 		@JvmStatic
 		fun isForcedItem(stack: ItemStack): Boolean = isForcedMarker(stack.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr(TOOL_MARKER, ""))
 
 		internal fun isForcedMarker(marker: String?) =
-			marker == CARD_MARKER || marker == TEAM_NAVIGATOR_MARKER || marker == TEAM_FINISHER_MARKER || marker == DELIVERY_SPOT_MARKER
+			marker == CARD_MARKER || marker == TEAM_NAVIGATOR_MARKER || marker == TEAM_FINISHER_MARKER || marker == DELIVERY_SPOT_MARKER || marker == SETTINGS_MARKER || marker == TASK_BROWSER_MARKER
 
 		fun clearNonForcedItems(player: ServerPlayer) {
 			for (slot in 0 until player.inventory.containerSize) {

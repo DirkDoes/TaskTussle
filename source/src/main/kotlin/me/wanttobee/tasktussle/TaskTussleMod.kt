@@ -44,6 +44,8 @@ object TaskTussleMod : DedicatedServerModInitializer {
 		if (world.isClientSide || player !is ServerPlayer) return InteractionResult.PASS
 		val item = player.getItemInHand(hand)
 		when {
+			service.isSettingsTool(item) -> service.openReadOnlySettings(player)
+			service.isTaskBrowser(item) -> service.openTaskBrowser(player)
 			service.isCard(item) -> service.openCard(player)
 			service.isTeamNavigator(item) -> service.openTeamMaker(player)
 			service.isTeamFinisher(item) -> service.finishTeamSelection(player)

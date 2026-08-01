@@ -20,6 +20,7 @@ import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.component.ItemLore
+import net.minecraft.world.item.component.ResolvableProfile
 import net.minecraft.world.level.block.Blocks
 import kotlin.math.max
 
@@ -52,7 +53,8 @@ object TaskTussleMenus {
 
 		final override fun quickMoveStack(player: Player, slotId: Int): ItemStack = ItemStack.EMPTY
 		protected fun clear() { contents.clearContent(); actions.clear() }
-		protected fun display(slot: Int, stack: ItemStack) = contents.setItem(slot, stack)
+		protected fun clearActions() = actions.clear()
+		protected fun display(slot: Int, stack: ItemStack) { actions.remove(slot); contents.setItem(slot, stack) }
 		protected fun button(slot: Int, stack: ItemStack, action: (ServerPlayer, Click) -> Unit) { display(slot, stack); actions[slot] = action }
 		protected fun fill(stack: () -> ItemStack = ::separator) { repeat(menuSlots) { display(it, stack()) } }
 
@@ -73,7 +75,7 @@ object TaskTussleMenus {
 	) : HopperMenu(containerId, playerInventory, contents) {
 		private val actions = mutableMapOf<Int, (ServerPlayer, Click) -> Unit>()
 		final override fun quickMoveStack(player: Player, slotId: Int): ItemStack = ItemStack.EMPTY
-		protected fun display(slot: Int, stack: ItemStack) = contents.setItem(slot, stack)
+		protected fun display(slot: Int, stack: ItemStack) { actions.remove(slot); contents.setItem(slot, stack) }
 		protected fun button(slot: Int, stack: ItemStack, action: (ServerPlayer, Click) -> Unit) { display(slot, stack); actions[slot] = action }
 		override fun clicked(slotId: Int, button: Int, input: ContainerInput, player: Player) {
 			if (slotId in 0 until 5) {
@@ -93,7 +95,8 @@ object TaskTussleMenus {
 		private val actions = mutableMapOf<Int, (ServerPlayer, Click) -> Unit>()
 		final override fun quickMoveStack(player: Player, slotId: Int): ItemStack = ItemStack.EMPTY
 		protected fun clear() { contents.clearContent(); actions.clear() }
-		protected fun display(slot: Int, stack: ItemStack) = contents.setItem(slot, stack)
+		protected fun clearActions() = actions.clear()
+		protected fun display(slot: Int, stack: ItemStack) { actions.remove(slot); contents.setItem(slot, stack) }
 		protected fun button(slot: Int, stack: ItemStack, action: (ServerPlayer, Click) -> Unit) { display(slot, stack); actions[slot] = action }
 		override fun clicked(slotId: Int, button: Int, input: ContainerInput, player: Player) {
 			if (slotId in 0 until 9) {
@@ -159,7 +162,8 @@ object TaskTussleMenus {
 		containerId: Int,
 		inventory: Inventory,
 		private val service: TaskTussleService,
-	) : ActionChestMenu(containerId, inventory, 6) {
+		private val readOnly: Boolean = false,
+	) : ActionChestMenu(containerId, inventory, 5) {
 		init { refresh() }
 
 		private fun refresh() {
@@ -180,21 +184,37 @@ object TaskTussleMenus {
 			setting(3, Items.NETHERITE_INGOT, "Hard Ratio: ${settings.hardRatio}", ratioLore, settings.hardRatio, settings.hardRatio > 0) { _, click -> settings.hardRatio = ratioChange(settings.hardRatio, click) }
 			setting(4, Items.PAPER, "Chose Teams: ${if (settings.chooseTeams) "on" else "off"}", enchanted = settings.chooseTeams, model = TEAMS_MODEL) { _, _ -> settings.chooseTeams = !settings.chooseTeams }
 			setting(5, Items.CLOCK, "Game Time: ${if (settings.gameMinutes == 0) "disabled" else "${settings.gameMinutes} minutes"}", enchanted = settings.gameMinutes > 0) { player, _ -> service.openTimeSettings(player) }
-			button(8, named(Items.WRITABLE_BOOK, "Load a pre-set", ChatFormatting.GOLD)) { player, _ -> player.sendSystemMessage(TaskTussleService.message("Does nothing yet", ChatFormatting.RED)) }
+			val preset = named(Items.WRITABLE_BOOK, "Load a pre-set", ChatFormatting.GOLD)
+			if (readOnly) display(8, preset) else button(8, preset) { player, _ -> player.sendSystemMessage(TaskTussleService.message("Does nothing yet", ChatFormatting.RED)) }
 
-			for (slot in 27 until 36) display(slot, emptyOption("task type"))
-			for (slot in 45 until 54) display(slot, emptyOption("game mode"))
-			taskManager(27, Items.SHULKER_SHELL, "Obtain Task", settings.blockWeight, "obtain")
-			taskManager(28, Items.KNOWLEDGE_BOOK, "Advancements Task", settings.advancementWeight, "advancements")
-			taskManager(29, Items.PAPER, "Click Task", settings.clickWeight, "click")
-			button(45, named(Items.FILLED_MAP, "Bingo", ChatFormatting.LIGHT_PURPLE, listOf("Click: Open details"))) { player, _ -> service.openManagerSettings(player, "bingo") }
+
+			for (slot in 18 until 27) display(slot, emptyOption("task type"))
+			for (slot in 36 until 45) display(slot, emptyOption("game mode"))
+			taskManager(18, Items.SHULKER_SHELL, "Obtain Task", settings.blockWeight, "obtain")
+			taskManager(19, Items.KNOWLEDGE_BOOK, "Advancements Task", settings.advancementWeight, "advancements")
+			taskManager(20, Items.PAPER, "Click Task", settings.clickWeight, "click")
+			val bingoLore = if (readOnly) listOf(
+				"Succeed tokens: ${settings.succeedTokens}",
+				"Overtime: ${settings.overtime}",
+				"${if (settings.mutualTasks <= 25) "Mutual tasks" else "Task pool"}: ${settings.mutualTasks}",
+				"Win condition: ${settings.winningCondition}",
+			) else listOf("Click: Open details")
+			val bingo = named(Items.FILLED_MAP, "Bingo", ChatFormatting.LIGHT_PURPLE, bingoLore)
+			if (readOnly) display(36, bingo) else button(36, bingo) { player, _ -> service.openManagerSettings(player, "bingo") }
 			broadcastChanges()
 		}
 
 		private fun taskManager(slot: Int, item: Item, title: String, weight: Int, manager: String) {
-			button(slot, named(item, "$title Ratio: ${if (weight == 0) "Disabled" else weight}", ChatFormatting.AQUA, taskLore, max(1, weight), weight > 0).apply {
+			val lore = if (!readOnly) taskLore else when (manager) {
+				"obtain" -> listOf("Hand in items: ${if (service.settings.handInItems) "on" else "off"}", "File: ${service.settings.blocksFile}")
+				"advancements" -> listOf("File: ${service.settings.advancementsFile}", "Icons: ${if (service.settings.customAdvancementIcons) "custom" else "recipe books"}")
+				else -> emptyList()
+			}
+			val stack = named(item, "$title Ratio: ${if (weight == 0) "Disabled" else weight}", ChatFormatting.AQUA, lore, max(1, weight), weight > 0).apply {
 				if (manager == "click") set(DataComponents.ITEM_MODEL, CLICK_MODELS.first())
-			}) { player, click ->
+			}
+			if (readOnly) { display(slot, stack); return }
+			button(slot, stack) { player, click ->
 				if (click.left && click.shift) service.openManagerSettings(player, manager)
 				else {
 					val value = when { click.right && click.shift -> 0; click.right -> max(0, weight - 1); else -> minOf(100, weight + 1) }
@@ -204,8 +224,9 @@ object TaskTussleMenus {
 			}
 		}
 
-		private fun setting(slot: Int, item: Item, title: String, lore: List<String> = emptyList(), count: Int = 1, enchanted: Boolean = false, model: Identifier? = null, action: (ServerPlayer, Click) -> Unit) {
-			button(slot, named(item, title, ChatFormatting.GOLD, lore, max(1, count), enchanted).apply { if (model != null) set(DataComponents.ITEM_MODEL, model) }) { player, click -> action(player, click); if (player.containerMenu === this) refresh() }
+		private fun setting(slot: Int, item: Item, title: String, lore: List<String> = emptyList(), count: Int = 1, enchanted: Boolean = false, model: Identifier? = null, action: (ServerPlayer, Click) -> Unit = { _, _ -> }) {
+			val stack = named(item, title, ChatFormatting.GOLD, if (readOnly) emptyList() else lore, max(1, count), enchanted).apply { if (model != null) set(DataComponents.ITEM_MODEL, model) }
+			if (readOnly) display(slot, stack) else button(slot, stack) { player, click -> action(player, click); if (player.containerMenu === this) refresh() }
 		}
 	}
 
@@ -229,7 +250,7 @@ object TaskTussleMenus {
 			button(4, named(item, title, color, listOf("Click: Go back"), enchanted = true)) { player, _ -> service.openSettings(player) }
 			when (manager) {
 				"obtain" -> obtainSettings()
-				"advancements" -> fileSetting(9, false)
+				"advancements" -> advancementSettings()
 				"bingo" -> bingoSettings()
 			}
 			broadcastChanges()
@@ -239,6 +260,15 @@ object TaskTussleMenus {
 			val settings = service.settings
 			setting(9, Items.HOPPER, "Hand in items: ${if (settings.handInItems) "on" else "off"}", enchanted = settings.handInItems) { _, _ -> settings.handInItems = !settings.handInItems }
 			fileSetting(10, true)
+		}
+
+		private fun advancementSettings() {
+			fileSetting(9, false)
+			val custom = service.settings.customAdvancementIcons
+			setting(10, Items.ITEM_FRAME, "Advancement icons: ${if (custom) "custom" else "recipe books"}", enchanted = custom) { _, _ ->
+				service.settings.customAdvancementIcons = !custom
+				service.refreshCards()
+			}
 		}
 
 		private fun bingoSettings() {
@@ -292,32 +322,186 @@ object TaskTussleMenus {
 		}
 	}
 
+	class CatalogTypeMenu(containerId: Int, inventory: Inventory, service: TaskTussleService) : ActionHopperMenu(containerId, inventory) {
+		init {
+			repeat(5) { display(it, separator()) }
+			button(1, named(Items.SHULKER_SHELL, "Obtain Tasks", ChatFormatting.AQUA)) { player, _ -> service.openCatalogFiles(player, true) }
+			button(3, named(Items.KNOWLEDGE_BOOK, "Advancement Tasks", ChatFormatting.AQUA)) { player, _ -> service.openCatalogFiles(player, false) }
+		}
+	}
+
 	class FilePickerMenu(
 		containerId: Int,
 		inventory: Inventory,
 		private val service: TaskTussleService,
 		private val blocks: Boolean,
-		private val page: Int,
-	) : ActionChestMenu(containerId, inventory, pickerRows(if (blocks) service.blockFiles().size else service.advancementFiles().size)) {
-		init {
-			fill()
-			val files = if (blocks) service.blockFiles() else service.advancementFiles()
-			val start = page * 45
-			files.drop(start).take(45).forEachIndexed { index, file ->
-				val current = file == if (blocks) service.settings.blocksFile else service.settings.advancementsFile
-				button(index, named(if (index % 2 == 0) Items.PAPER else Items.MAP, file, ChatFormatting.YELLOW, if (current) listOf("current") else emptyList(), enchanted = current)) { player, _ ->
-					if (service.selectCatalog(player, blocks, file)) service.openManagerSettings(player, if (blocks) "obtain" else "advancements")
+		private val browse: Boolean = false,
+		initialSelection: String? = null,
+	) : ActionChestMenu(containerId, inventory, if (browse) 6 else pickerRows(if (blocks) service.blockFiles().size else service.advancementFiles().size)) {
+		private var selected = initialSelection
+		init { refresh() }
+
+		private fun refresh() {
+			clear()
+			val files = service.catalogFiles(blocks)
+			if (browse) {
+				for (slot in 9..17) display(slot, separator())
+				button(0, named(Items.ARROW, "Back", ChatFormatting.WHITE)) { player, _ -> service.openTaskBrowser(player) }
+				button(8, named(Items.WRITABLE_BOOK, "Create new file", ChatFormatting.GREEN)) { player, _ -> service.openCatalogCreation(player, blocks) }
+				val chosen = files.find { it.name == selected }
+				if (chosen == null) display(4, named(Items.DYE.gray(), "Nothing selected", ChatFormatting.GRAY))
+				else {
+					button(4, fileStack(chosen, files.indexOf(chosen), listOf("Click to open"), true)) { player, _ -> service.openCatalogContents(player, blocks, chosen.name) }
+					button(6, named(Items.PAPER, "Duplicate", ChatFormatting.AQUA, listOf(chosen.name))) { player, _ ->
+						service.duplicateCatalog(player, blocks, chosen.name)?.let { selected = it; refresh() }
+					}
+					if (service.canEditCatalog(playerInventory.player as ServerPlayer, blocks, chosen.name)) {
+						button(2, named(Items.BARRIER, "Delete", ChatFormatting.RED, listOf(chosen.name))) { player, _ ->
+							if (service.deleteCatalog(player, blocks, chosen.name)) { selected = null; refresh() }
+						}
+					}
+				}
+			} else fill()
+			files.forEachIndexed { index, file ->
+				val current = file.name == if (blocks) service.settings.blocksFile else service.settings.advancementsFile
+				val chosen = selected == file.name
+				val lore = when { chosen -> listOf("Click again to open"); current && !browse -> listOf("current"); else -> emptyList() }
+				button((if (browse) 18 else 0) + index, fileStack(file, index, lore, chosen || current && !browse)) { player, _ ->
+					if (browse && chosen) service.openCatalogContents(player, blocks, file.name)
+					else if (browse) { selected = file.name; refresh() }
+					else if (service.selectCatalog(player, blocks, file.name)) service.openManagerSettings(player, if (blocks) "obtain" else "advancements")
 				}
 			}
-			if (files.size > 45) {
-				val totalPages = (files.size - 1) / 45 + 1
-				display(49, named(Items.BOW, "${page + 1}/$totalPages", ChatFormatting.GRAY))
-				if (page > 0) button(45, named(Items.ARROW, "Go Back", ChatFormatting.WHITE)) { player, _ -> service.openFilePicker(player, blocks, page - 1) }
-				if (page + 1 < totalPages) button(53, named(Items.ARROW, "Go Next", ChatFormatting.WHITE)) { player, _ -> service.openFilePicker(player, blocks, page + 1) }
-			}
+			broadcastChanges()
+		}
+
+		private fun fileStack(file: CatalogFile, index: Int, lore: List<String>, enchanted: Boolean): ItemStack {
+			val stack = named(if (file.owner == null) if (index % 2 == 0) Items.PAPER else Items.MAP else Items.PLAYER_HEAD, file.name, ChatFormatting.YELLOW, lore, enchanted = enchanted)
+			if (file.owner != null) stack.set(DataComponents.PROFILE, ResolvableProfile.createUnresolved(file.owner))
+			return stack
 		}
 	}
 
+	class CatalogCreateMenu(containerId: Int, inventory: Inventory, service: TaskTussleService, blocks: Boolean) : ActionHopperMenu(containerId, inventory) {
+		init {
+			repeat(5) { display(it, separator()) }
+			button(0, named(Items.ARROW, "Back", ChatFormatting.WHITE)) { player, _ -> service.openCatalogFiles(player, blocks) }
+			button(2, named(Items.KNOWLEDGE_BOOK, "Generated baseline", ChatFormatting.AQUA, listOf("Start with generated Easy, Normal and Hard tiers"))) { player, _ -> service.createCatalog(player, blocks, true) }
+			button(3, named(Items.PAPER, "Empty", ChatFormatting.GRAY, listOf("Start with every task removed"))) { player, _ -> service.createCatalog(player, blocks, false) }
+		}
+	}
+	class CatalogContentsMenu(
+		containerId: Int,
+		inventory: Inventory,
+		private val service: TaskTussleService,
+		private val blocks: Boolean,
+		private val file: String,
+		private var pools: TaskPools,
+		private var removedTasks: List<Identifier>,
+	) : ActionChestMenu(containerId, inventory, 6) {
+		private var offset = 0
+		private var editing: Identifier? = null
+		init { refresh() }
+
+		private fun refresh() {
+			clear()
+			val tierOffsets = catalogTierOffsets(pools, removedTasks)
+			val rows = buildList<List<Pair<ItemStack, Identifier?>>> {
+				for (difficulty in Difficulty.entries) {
+					add(List(8) { column -> tierLine(difficulty, column) to null })
+					pools[difficulty].chunked(8).forEach { ids -> add(ids.map { catalogEntry(it) to it }) }
+				}
+				add(List(8) { column -> tierLine("removed", "Removed Items", ChatFormatting.GRAY, column) to null })
+				removedTasks.chunked(8).forEach { ids -> add(ids.map { catalogEntry(it) to it }) }
+			}
+			val maxOffset = catalogMaxOffset(pools, removedTasks)
+			offset = offset.coerceIn(0, maxOffset)
+			val editable = service.canEditCatalog(playerInventory.player as ServerPlayer, blocks, file)
+			rows.drop(offset).take(6).forEachIndexed { row, cells ->
+				cells.forEachIndexed { column, (stack, id) ->
+					val slot = row * 9 + column
+					if (editable && id != null) button(slot, stack) { _, _ -> editing = id; refresh() }
+					else display(slot, stack)
+				}
+			}
+			Difficulty.entries.forEachIndexed { index, difficulty ->
+				button(17 + index * 9, tierDot(tierId(difficulty), "${difficulty.yamlName} Items", tierColor(difficulty))) { _, _ -> offset = tierOffsets[index]; refresh() }
+			}
+			button(44, tierDot("removed", "Removed Items", ChatFormatting.GRAY)) { _, _ -> offset = tierOffsets.last(); refresh() }
+			if (offset > 0) button(8, arrow(up = true, enabled = true)) { _, click -> offset -= if (click.right) 2 else 1; refresh() }
+			else display(8, arrow(up = true, enabled = false))
+			if (offset < maxOffset) button(53, arrow(up = false, enabled = true)) { _, click -> offset += if (click.right) 2 else 1; refresh() }
+			else display(53, arrow(up = false, enabled = false))
+			editing?.let(::modal)
+			broadcastChanges()
+		}
+
+		private fun modal(id: Identifier) {
+			clearActions()
+			for (column in 1..6) {
+				display(9 + column, modalEdge(when (column) { 1 -> "tl"; 6 -> "tr"; else -> "t" }))
+				display(36 + column, modalEdge(when (column) { 1 -> "bl"; 6 -> "br"; else -> "b" }))
+			}
+			for (row in 2..3) {
+				display(row * 9 + 1, modalEdge("l"))
+				display(row * 9 + 6, modalEdge("r"))
+			}
+			display(20, separator())
+			display(21, catalogEntry(id))
+			button(22, named(Items.BARRIER, "Cancel", ChatFormatting.RED)) { _, _ -> editing = null; refresh() }
+			display(23, separator())
+			Difficulty.entries.forEachIndexed { index, difficulty ->
+				button(29 + index, tierDot(tierId(difficulty), "Move to ${difficulty.yamlName}", tierColor(difficulty))) { player, _ -> move(player, id, difficulty) }
+			}
+			button(32, tierDot("removed", "Move to Removed", ChatFormatting.GRAY)) { player, _ -> move(player, id, null) }
+		}
+
+		private fun move(player: ServerPlayer, id: Identifier, target: Difficulty?) {
+			service.moveCatalogTask(player, blocks, file, id, target)?.let { (updated, removed) ->
+				pools = updated
+				removedTasks = removed
+				editing = null
+				refresh()
+			}
+		}
+
+		override fun removed(player: Player) {
+			super.removed(player)
+			val serverPlayer = player as? ServerPlayer ?: return
+			service.returnToCatalogFiles(serverPlayer, blocks, file)
+		}
+
+		private fun tierLine(difficulty: Difficulty, column: Int) = tierLine(
+			tierId(difficulty), "${difficulty.yamlName} Items", tierColor(difficulty), column,
+		)
+
+		private fun tierLine(tier: String, title: String, color: ChatFormatting, column: Int): ItemStack {
+			val part = when (column) { 0 -> "start"; 7 -> "end"; else -> "straight" }
+			return named(Items.PAPER, title, color).apply {
+				set(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath("tasktussle", "tier_${tier}_$part"))
+			}
+		}
+
+		private fun tierDot(tier: String, title: String, color: ChatFormatting) = named(Items.PAPER, title, color).apply {
+			set(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath("tasktussle", "tier_${tier}_dot"))
+		}
+
+		private fun modalEdge(part: String) = named(Items.PAPER, " ", ChatFormatting.DARK_GRAY).apply {
+			set(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath("tasktussle", "modal_$part"))
+		}
+
+		private fun arrow(up: Boolean, enabled: Boolean): ItemStack = named(
+			Items.PAPER, if (up) "Scroll up" else "Scroll down", if (enabled) ChatFormatting.WHITE else ChatFormatting.GRAY,
+		).apply { set(DataComponents.ITEM_MODEL, if (up) ARROW_UP_MODEL else ARROW_DOWN_MODEL) }
+
+		private fun catalogEntry(id: Identifier): ItemStack {
+			val lore = if (blocks) emptyList() else service.advancementDescription(id)?.let(::wrapLore).orEmpty()
+			val icon = if (blocks) ItemStack(Items.PAPER).apply {
+				set(DataComponents.ITEM_MODEL, BuiltInRegistries.ITEM.getKey(BuiltInRegistries.BLOCK.getValue(id).asItem()))
+			} else service.advancementIcon(id)
+			return named(icon, service.catalogName(blocks, id), ChatFormatting.WHITE, lore)
+		}
+	}
 	class TaskOptionsMenu(
 		containerId: Int,
 		inventory: Inventory,
@@ -365,6 +549,8 @@ object TaskTussleMenus {
 	private val TEAMS_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "teams")
 	private val TASK_COMPLETE_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "task_complete")
 	private val CLICK_MODELS = (1..3).map { Identifier.fromNamespaceAndPath("tasktussle", "click_me$it") }
+	private val ARROW_UP_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "arrow_up")
+	private val ARROW_DOWN_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "arrow_down")
 	private val ratioLore = listOf("L Click: Increase ratio", "R Click: Decrease ratio", "Shift+R Click: Set ratio to 0", "A ratio of 0 turns it off")
 	private val taskLore = listOf("Shift+L Click: Open details") + ratioLore
 	private val mutualLore = listOf("L Click: Increase amount", "R Click: Decrease amount", "Shift+L Click: Set amount to 25", "Shift+R Click: Set amount to 0")
@@ -372,19 +558,27 @@ object TaskTussleMenus {
 	private fun ratioChange(value: Int, click: Click): Int = when { click.right && click.shift -> 0; click.right -> max(0, value - 1); else -> minOf(100, value + 1) }
 	private fun simpleChange(value: Int, click: Click, min: Int, max: Int): Int = (value + if (click.right) -1 else 1).coerceIn(min, max)
 
-	private fun taskStack(service: TaskTussleService, task: BingoTask): ItemStack = when {
-		task.completed -> named(Items.PAPER, service.taskName(task), ChatFormatting.GREEN, listOf("Completed") + task.contributors).apply {
-			set(DataComponents.ITEM_MODEL, TASK_COMPLETE_MODEL)
-		}
-		task.failed -> named(Blocks.STAINED_GLASS_PANE.red().asItem(), service.taskName(task), ChatFormatting.RED, listOf("Failed"), enchanted = true)
-		else -> named(Items.PAPER, service.taskName(task), ChatFormatting.WHITE).apply {
-			set(DataComponents.ITEM_MODEL, if (task.template.kind == TaskKind.CLICK) CLICK_MODELS.random() else BuiltInRegistries.ITEM.getKey(taskItem(task)))
-			val kind = when (task.template.kind) { TaskKind.BLOCK -> "Obtain Task"; TaskKind.ADVANCEMENT -> "Advancements Task"; TaskKind.CLICK -> "Click Task" }
-			val description = when (task.template.kind) { TaskKind.BLOCK -> "obtain this block"; TaskKind.ADVANCEMENT -> "complete this advancement"; TaskKind.CLICK -> "click me" }
-			set(DataComponents.LORE, ItemLore(listOf(
-				taskLoreLine("Task", kind, ChatFormatting.AQUA),
-				taskLoreLine("Description", description, ChatFormatting.WHITE),
-			)))
+	private fun taskStack(service: TaskTussleService, task: BingoTask): ItemStack {
+		val advancementDescription = if (task.template.kind == TaskKind.ADVANCEMENT) service.advancementDescription(task.template.id)?.let(::wrapLore).orEmpty() else emptyList()
+		return when {
+			task.completed -> named(Items.PAPER, service.taskName(task), ChatFormatting.GREEN, listOf("Completed") + advancementDescription + task.contributors).apply {
+				set(DataComponents.ITEM_MODEL, TASK_COMPLETE_MODEL)
+			}
+			task.failed -> named(Blocks.STAINED_GLASS_PANE.red().asItem(), service.taskName(task), ChatFormatting.RED, listOf("Failed") + advancementDescription, enchanted = true)
+			else -> named(if (task.template.kind == TaskKind.ADVANCEMENT) service.advancementIcon(task.template.id) else ItemStack(Items.PAPER), service.taskName(task), ChatFormatting.WHITE).apply {
+				if (task.template.kind != TaskKind.ADVANCEMENT) set(DataComponents.ITEM_MODEL, if (task.template.kind == TaskKind.CLICK) CLICK_MODELS.random() else BuiltInRegistries.ITEM.getKey(taskItem(task)))
+				val kind = when (task.template.kind) { TaskKind.BLOCK -> "Obtain Task"; TaskKind.ADVANCEMENT -> "Advancements Task"; TaskKind.CLICK -> "Click Task" }
+				val description = when (task.template.kind) { TaskKind.BLOCK -> "obtain this block"; TaskKind.ADVANCEMENT -> service.advancementDescription(task.template.id) ?: "complete this advancement"; TaskKind.CLICK -> "click me" }
+				val descriptionLines = wrapLore(description)
+				val descriptionLore = if (task.template.kind == TaskKind.ADVANCEMENT) {
+					listOf(Component.literal("Description:").withStyle { it.withColor(ChatFormatting.GRAY).withItalic(false) }) +
+						descriptionLines.map { Component.literal(it).withStyle { style -> style.withColor(ChatFormatting.WHITE).withItalic(false) } }
+				} else descriptionLines.mapIndexed { index, line ->
+					if (index == 0) taskLoreLine("Description", line, ChatFormatting.WHITE)
+					else Component.literal(line).withStyle { it.withColor(ChatFormatting.WHITE).withItalic(false) }
+				}
+				set(DataComponents.LORE, ItemLore(listOf(taskLoreLine("Task", kind, ChatFormatting.AQUA)) + descriptionLore))
+			}
 		}
 	}
 
@@ -398,14 +592,15 @@ object TaskTussleMenus {
 		TaskKind.CLICK -> Items.BELL
 	}
 
-	private fun separator(): ItemStack = named(Blocks.STAINED_GLASS_PANE.gray().asItem(), " ", ChatFormatting.DARK_GRAY).apply {
+	private fun separator(title: String = " "): ItemStack = named(Blocks.STAINED_GLASS_PANE.gray().asItem(), title, ChatFormatting.DARK_GRAY).apply {
 		set(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath("tasktussle", "empty_slot"))
 	}
 	private fun emptyTeamSlot(): ItemStack = named(Blocks.STAINED_GLASS.gray().asItem(), "Empty team slot", ChatFormatting.GRAY)
 	private fun emptyOption(type: String): ItemStack = named(Blocks.STAINED_GLASS.lightGray().asItem(), "Empty $type slot", ChatFormatting.GRAY, listOf("A spot for a future $type"))
 	private fun emptySetting(): ItemStack = named(Blocks.STAINED_GLASS.lightGray().asItem(), "Empty setting slot", ChatFormatting.GRAY, listOf("a spot for a future setting"))
 
-	private fun named(item: Item, name: String, color: ChatFormatting, lore: List<String> = emptyList(), count: Int = 1, enchanted: Boolean = false): ItemStack = ItemStack(item).apply {
+	private fun named(item: Item, name: String, color: ChatFormatting, lore: List<String> = emptyList(), count: Int = 1, enchanted: Boolean = false): ItemStack = named(ItemStack(item), name, color, lore, count, enchanted)
+	private fun named(stack: ItemStack, name: String, color: ChatFormatting, lore: List<String> = emptyList(), count: Int = 1, enchanted: Boolean = false): ItemStack = stack.apply {
 		val visualCount = count.coerceIn(1, 99)
 		if (visualCount > maxStackSize) set(DataComponents.MAX_STACK_SIZE, visualCount)
 		this.count = visualCount
@@ -437,6 +632,32 @@ object TaskTussleMenus {
 	}
 }
 
+internal fun catalogTierOffsets(pools: TaskPools, removed: List<Identifier>): List<Int> =
+	listOf(pools.easy, pools.medium, pools.hard, removed).runningFold(0) { offset, tier -> offset + 1 + (tier.size + 7) / 8 }.dropLast(1)
+
+internal fun catalogMaxOffset(pools: TaskPools, removed: List<Identifier> = emptyList()): Int {
+	val offsets = catalogTierOffsets(pools, removed)
+	return max(offsets.last(), offsets.last() + 1 + (removed.size + 7) / 8 - 6)
+}
+
+private fun tierId(difficulty: Difficulty) = if (difficulty == Difficulty.MEDIUM) "normal" else difficulty.name.lowercase()
+
+private fun tierColor(difficulty: Difficulty) = when (difficulty) {
+	Difficulty.EASY -> ChatFormatting.GREEN
+	Difficulty.MEDIUM -> ChatFormatting.YELLOW
+	Difficulty.HARD -> ChatFormatting.RED
+}
+
+internal fun wrapLore(text: String, maxLength: Int = 42): List<String> {
+	val lines = mutableListOf<String>()
+	var line = ""
+	for (word in text.trim().split(Regex("""\s+""")).filter(String::isNotEmpty)) {
+		if (line.isEmpty() || line.length + word.length + 1 <= maxLength) line = if (line.isEmpty()) word else "$line $word"
+		else { lines += line; line = word }
+	}
+	if (line.isNotEmpty()) lines += line
+	return lines
+}
 internal enum class MenuClickSound { BUTTON, PAGE }
 
 internal fun menuClickSound(pageChanged: Boolean, contentsChanged: Boolean): MenuClickSound? = when {

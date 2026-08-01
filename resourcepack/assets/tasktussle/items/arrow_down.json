@@ -1,0 +1,7 @@
+{
+    "oversized_in_gui":  true,
+    "model":  {
+                  "model":  "tasktussle:item/arrow_down",
+                  "type":  "minecraft:model"
+              }
+}

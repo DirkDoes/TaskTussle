@@ -17,6 +17,8 @@ class ForcedItemTest {
 		assertTrue(TaskTussleService.isForcedMarker("team_navigator"))
 		assertTrue(TaskTussleService.isForcedMarker("team_finisher"))
 		assertTrue(TaskTussleService.isForcedMarker("delivery_spot"))
+		assertTrue(TaskTussleService.isForcedMarker("settings"))
+		assertTrue(TaskTussleService.isForcedMarker("task_browser"))
 		assertFalse(TaskTussleService.isForcedMarker("anything_else"))
 		assertFalse(TaskTussleService.isForcedMarker(null))
 	}

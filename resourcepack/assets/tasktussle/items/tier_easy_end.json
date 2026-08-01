@@ -1,0 +1,7 @@
+{
+    "oversized_in_gui":  true,
+    "model":  {
+                  "model":  "tasktussle:item/tier_easy_end",
+                  "type":  "minecraft:model"
+              }
+}

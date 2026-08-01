@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "tasktussle:item/empty_slot"
+    "layer0": "tasktussle:item/ui_items/empty_slot"
   },
   "display": {
     "gui": {

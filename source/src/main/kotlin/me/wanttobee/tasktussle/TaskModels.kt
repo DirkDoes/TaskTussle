@@ -55,6 +55,7 @@ data class TaskTussleSettings(
 	var overtime: String = "draw",
 	var blocksFile: String = "blocks_default.yml",
 	var advancementsFile: String = "advancements_default.yml",
+	var customAdvancementIcons: Boolean = true,
 )
 
 data class TussleGame(

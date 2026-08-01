@@ -8,6 +8,7 @@ import net.minecraft.world.item.Items
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.util.UUID
 
 enum class Difficulty(val yamlName: String) { EASY("Easy"), MEDIUM("Medium"), HARD("Hard") }
 
@@ -22,6 +23,8 @@ data class TaskPools(
 		Difficulty.HARD -> hard
 	}
 }
+
+data class CatalogFile(val name: String, val owner: UUID?)
 
 object TaskCatalog {
 	private val directory: Path by lazy { FabricLoader.getInstance().configDir.resolve("tasktussle") }
@@ -39,17 +42,55 @@ object TaskCatalog {
 		writeYaml(directory.resolve("advancements_all_26_2.yml"), allAdvancements(server))
 	}
 
-	fun blocks(fileName: String): TaskPools = readYaml(directory.resolve(safeName(fileName))).filter { id ->
+	fun blocks(fileName: String): TaskPools = readYaml(path(true, fileName)).filter { id ->
 		BuiltInRegistries.BLOCK.containsKey(id) && BuiltInRegistries.BLOCK.getValue(id).asItem() != Items.AIR
 	}
 
-	fun advancements(server: MinecraftServer, fileName: String): TaskPools = readYaml(directory.resolve(safeName(fileName))).filter {
+	fun advancements(server: MinecraftServer, fileName: String): TaskPools = readYaml(path(false, fileName)).filter {
 		server.advancements.get(it)?.value?.display?.isPresent == true
 	}
 
-	fun blockFiles(): List<String> = files("blocks_")
+	fun removed(server: MinecraftServer, blocks: Boolean, pools: TaskPools): List<Identifier> {
+		val included = Difficulty.entries.flatMap(pools::get).toSet()
+		val available = if (blocks) BuiltInRegistries.BLOCK.keySet().asSequence().filter { id ->
+			val item = BuiltInRegistries.BLOCK.getValue(id).asItem()
+			item != Items.AIR && BuiltInRegistries.ITEM.getKey(item) == id
+		} else server.advancements.allAdvancements.asSequence().filter { it.value.display.isPresent }.map { it.id }
+		return available.filterNot(included::contains).sortedBy(Identifier::toString).toList()
+	}
 
-	fun advancementFiles(): List<String> = files("advancements_")
+	fun catalogFiles(blocks: Boolean): List<CatalogFile> = files(prefix(blocks)).take(MAX_FILES).map { CatalogFile(it, owner(blocks, it)) }
+
+	fun blockFiles(): List<String> = catalogFiles(true).map(CatalogFile::name)
+
+	fun advancementFiles(): List<String> = catalogFiles(false).map(CatalogFile::name)
+
+	fun owner(blocks: Boolean, fileName: String): UUID? = parseOwner(Files.readAllLines(path(blocks, fileName)))
+
+	fun totalFiles(blocks: Boolean): Int = files(prefix(blocks)).size
+
+	fun ownedFiles(owner: UUID): Int = listOf(true, false).sumOf { blocks -> files(prefix(blocks)).count { owner(blocks, it) == owner } }
+
+	fun generated(server: MinecraftServer, blocks: Boolean): TaskPools = if (blocks) allBlocks() else allAdvancements(server)
+
+	fun create(blocks: Boolean, owner: UUID, ownerName: String, pools: TaskPools): String {
+		require(totalFiles(blocks) < MAX_FILES) { "This task list already has $MAX_FILES files." }
+		val stem = ownerName.lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_').ifEmpty { "player" }
+		val existing = files(prefix(blocks)).toSet()
+		val name = generateSequence(1) { it + 1 }.map { "${prefix(blocks)}${stem}_$it.yml" }.first { it !in existing }
+		writeYaml(path(blocks, name), pools, owner)
+		return name
+	}
+
+	fun delete(blocks: Boolean, fileName: String) = Files.delete(path(blocks, fileName))
+
+	fun update(blocks: Boolean, fileName: String, pools: TaskPools) = writeYaml(path(blocks, fileName), pools, owner(blocks, fileName))
+
+	internal fun parseOwner(lines: List<String>): UUID? {
+		val value = lines.asSequence().map { it.substringBefore('#').trim() }
+			.firstOrNull { it.startsWith("owner:", ignoreCase = true) }?.substringAfter(':')?.trim()
+		return value?.takeIf(String::isNotEmpty)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+	}
 
 	internal fun parseYaml(lines: List<String>): TaskPools {
 		val values = Difficulty.entries.associateWith { mutableListOf<Identifier>() }
@@ -81,6 +122,14 @@ object TaskCatalog {
 		val fileName = if (name.endsWith(".yml")) name else "$name.yml"
 		require(fileName == Path.of(fileName).fileName.toString()) { "Task file must be inside config/tasktussle" }
 		return fileName
+	}
+
+	private fun prefix(blocks: Boolean) = if (blocks) "blocks_" else "advancements_"
+
+	private fun path(blocks: Boolean, fileName: String): Path {
+		val safe = safeName(fileName)
+		require(safe.startsWith(prefix(blocks))) { "Task file has the wrong type." }
+		return directory.resolve(safe)
 	}
 
 	private fun files(prefix: String): List<String> = Files.list(directory).use { paths ->
@@ -129,9 +178,10 @@ object TaskCatalog {
 		)
 	}
 
-	private fun writeYaml(path: Path, pools: TaskPools) {
+	private fun writeYaml(path: Path, pools: TaskPools, owner: UUID? = null) {
 		val text = buildString {
-			appendLine("# Generated from the Minecraft 26.2 registry. Copy this file before editing it.")
+			appendLine("# TaskTussle task catalog.")
+			if (owner != null) appendLine("owner: $owner")
 			for (difficulty in Difficulty.entries) {
 				appendLine("${difficulty.yamlName}:")
 				pools[difficulty].forEach { appendLine("  - $it") }
@@ -143,7 +193,18 @@ object TaskCatalog {
 	private fun TaskPools.filter(predicate: (Identifier) -> Boolean) = TaskPools(
 		easy.filter(predicate), medium.filter(predicate), hard.filter(predicate),
 	)
+
+	private const val MAX_FILES = 36
 }
+
+internal fun moveTaskBetweenTiers(pools: TaskPools, id: Identifier, target: Difficulty?): TaskPools {
+	fun tier(difficulty: Difficulty, values: List<Identifier>) = values.filterNot(id::equals) + if (target == difficulty) listOf(id) else emptyList()
+	return TaskPools(tier(Difficulty.EASY, pools.easy), tier(Difficulty.MEDIUM, pools.medium), tier(Difficulty.HARD, pools.hard))
+}
+
+internal fun mayCreateCatalog(owned: Int, total: Int, operator: Boolean) = total < 36 && (operator || owned < 3)
+
+internal fun mayEditCatalog(owner: UUID?, player: UUID, operator: Boolean) = operator || owner == player
 
 object BlockDifficulty {
 	private val unobtainable = setOf(
