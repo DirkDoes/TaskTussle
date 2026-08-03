@@ -702,7 +702,9 @@ class TaskTussleService {
 			set(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.DEFAULT
 				.withHidden(DataComponents.ATTRIBUTE_MODIFIERS, true)
 				.withHidden(DataComponents.POT_DECORATIONS, true)
-				.withHidden(DataComponents.BANNER_PATTERNS, true))
+				.withHidden(DataComponents.BANNER_PATTERNS, true)
+				.withHidden(DataComponents.BEES, true)
+				.withHidden(DataComponents.BLOCK_STATE, true))
 			if (id.namespace == "minecraft") {
 				set(DataComponents.ITEM_MODEL, ADVANCEMENT_ICON_MODEL)
 				set(DataComponents.CUSTOM_MODEL_DATA, CustomModelData(emptyList(), emptyList(), listOf(id.toString()), emptyList()))
