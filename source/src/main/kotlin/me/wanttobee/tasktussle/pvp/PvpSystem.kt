@@ -3,7 +3,6 @@ package me.wanttobee.tasktussle.pvp
 import java.util.UUID
 import me.wanttobee.tasktussle.TaskTussleSystem
 import me.wanttobee.tasktussle.base.generic.named
-import me.wanttobee.tasktussle.teams.TeamMakerMenu
 import net.minecraft.ChatFormatting
 import net.minecraft.core.component.DataComponents
 import net.minecraft.server.MinecraftServer
@@ -25,7 +24,7 @@ class PvpSystem(private val system: TaskTussleSystem) {
 		val mode = if (optedIn) PvpMode.ON else PvpMode.OFF
 		return named(
 			mode.icon,
-			"Cross-team PvP: ${if (optedIn) "Opted in" else "Opted out"}",
+			"PVP: ${if (optedIn) "Opted in" else "Opted out"}",
 			if (optedIn) ChatFormatting.GREEN else ChatFormatting.GRAY,
 			listOf("Left or right click to toggle", "Your choice locks when the game starts", "Teammate damage is always enabled"),
 		).apply { mode.iconModel?.let { set(DataComponents.ITEM_MODEL, it) } }
@@ -36,7 +35,6 @@ class PvpSystem(private val system: TaskTussleSystem) {
 		if (!optedOut.add(player.uuid)) optedOut.remove(player.uuid)
 		system.items.syncPvpToggle(player)
 		refreshNames(player.level().server)
-		(player.containerMenu as? TeamMakerMenu)?.refresh()
 		player.containerMenu.broadcastFullState()
 		return true
 	}

@@ -38,11 +38,11 @@ class ForcedItems(private val system: TaskTussleSystem) {
 	)
 
 	fun giveTeamNavigator(player: ServerPlayer) = giveAt(
-		player, 8, Items.PAPER, "Teams", ChatFormatting.BLUE, TEAM_NAVIGATOR_MARKER,
+		player, 4, Items.PAPER, "Teams", ChatFormatting.BLUE, TEAM_NAVIGATOR_MARKER,
 		TEAMS_MODEL.takeIf { TaskTussleResourcePackServer.active },
 	)
 
-	fun giveTeamFinisher(player: ServerPlayer) = giveAt(player, 7, Items.FIRE_CHARGE, "Detonate Current Teams", ChatFormatting.GOLD, TEAM_FINISHER_MARKER)
+	fun giveTeamFinisher(player: ServerPlayer) = giveAt(player, 8, Items.FIRE_CHARGE, "Detonate Current Teams", ChatFormatting.GOLD, TEAM_FINISHER_MARKER)
 
 	fun giveSettingsTool(player: ServerPlayer) {
 		val displaced = player.inventory.getItem(SETTINGS_SLOT).takeUnless(::isSettingsTool)?.takeUnless(ItemStack::isEmpty)?.copy()
@@ -60,7 +60,7 @@ class ForcedItems(private val system: TaskTussleSystem) {
 		val current = player.inventory.getItem(PVP_SLOT)
 		if (system.pvp.canChoose) {
 			val icon = system.pvp.choiceIcon(player.uuid)
-			if (isPvpToggle(current) && current.item == icon.item) return
+			if (isPvpToggle(current) && current.item == icon.item && current.get(DataComponents.CUSTOM_NAME) == icon.get(DataComponents.CUSTOM_NAME)) return
 			val displaced = current.takeUnless(::isPvpToggle)?.takeUnless(ItemStack::isEmpty)?.copy()
 			removePvpToggle(player)
 			icon.set(DataComponents.CUSTOM_DATA, CustomData.of(CompoundTag().apply { putString(TOOL_MARKER, PVP_MARKER) }))

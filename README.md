@@ -33,7 +33,7 @@ The default task catalogs are copied to `config/tasktussle/` on first start. The
 
 Use `/tt help` in game for commands.
 
-The PvP setting between team selection and game time controls damage across teams: on, opt-in/out, or off. Teammates can always damage each other. In opt-in/out mode, players start opted in and can toggle the sword/peace icon beside their settings compass, or use the Team Maker button. The PvP-off setting also uses the peace icon. Choices lock and the toggle disappears when a game starts; both players must be opted in for cross-team melee or player-fired projectile damage. Environmental damage such as lava is unchanged.
+The PvP setting between team selection and game time controls damage across teams: on, opt-in/out, or off. Teammates can always damage each other. In opt-in/out mode, players start opted in and can toggle the sword/peace icon beside their settings compass. This hotbar toggle remains available during team selection. The Teams item occupies the center hotbar slot, and the starter's detonator sits in the far-right slot. The PvP-off setting also uses the peace icon. Choices lock and the toggle disappears when a game starts; both players must be opted in for cross-team melee or player-fired projectile damage. Environmental damage such as lava is unchanged.
 
 The compass opens **Task Tussle Settings Preview**; `/tt settings` opens the editable menu. `/tt worldsetup start` sets time to 0 and freezes it, and `/tt worldsetup clear` resumes time.
 

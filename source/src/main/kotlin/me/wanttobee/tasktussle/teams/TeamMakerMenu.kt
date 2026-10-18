@@ -24,10 +24,6 @@ class TeamMakerMenu(
 				system.teams.toggleTeam(player, index)
 			}
 		}
-		// A full 54-team grid still has the toggle in the player's hotbar below it.
-		if (system.pvp.canChoose && selection.teamCount < contents.containerSize) {
-			button(contents.containerSize - 1, system.pvp.choiceIcon(playerInventory.player.uuid)) { player, _ -> system.pvp.toggle(player) }
-		}
 		broadcastChanges()
 	}
 }

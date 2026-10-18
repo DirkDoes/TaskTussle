@@ -5,7 +5,6 @@ import me.wanttobee.tasktussle.TaskTussleSystem
 import me.wanttobee.tasktussle.base.tasks.ITaskManager
 import me.wanttobee.tasktussle.pvp.PvpMode
 import me.wanttobee.tasktussle.teams.TEAMS_MODEL
-import me.wanttobee.tasktussle.teams.TeamMakerMenu
 import me.wanttobee.tasktussle.util.message
 import net.minecraft.ChatFormatting
 import net.minecraft.core.component.DataComponents
@@ -50,10 +49,7 @@ class SettingsMenu(
 		setting(5, settings.pvpMode.icon, "PvP: ${settings.pvpMode.label}", listOf("Click: Change cross-team PvP", "Teammate damage is always enabled"), model = settings.pvpMode.iconModel) { player, _ ->
 			settings.pvpMode = PvpMode.entries[(settings.pvpMode.ordinal + 1) % PvpMode.entries.size]
 			system.pvp.refreshNames(player.level().server)
-			player.level().server.playerList.players.forEach {
-				system.items.syncPvpToggle(it)
-				(it.containerMenu as? TeamMakerMenu)?.refresh()
-			}
+			player.level().server.playerList.players.forEach(system.items::syncPvpToggle)
 		}
 		setting(6, Items.CLOCK, "Game Time: ${if (settings.gameMinutes == 0) "disabled" else "${settings.gameMinutes} minutes"}", enchanted = settings.gameMinutes > 0) { player, _ -> system.menus.openTimeSettings(player) }
 		val preset = named(Items.WRITABLE_BOOK, "Load a pre-set", ChatFormatting.GOLD)
