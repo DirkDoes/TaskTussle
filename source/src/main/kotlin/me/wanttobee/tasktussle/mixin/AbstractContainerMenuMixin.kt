@@ -1,7 +1,7 @@
 package me.wanttobee.tasktussle.mixin
 
-import me.wanttobee.tasktussle.TaskTussleService
 import me.wanttobee.tasktussle.TaskTussleMod
+import me.wanttobee.tasktussle.items.ForcedItems
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.inventory.AbstractContainerMenu
@@ -30,10 +30,10 @@ abstract class AbstractContainerMenuMixin {
 			return
 		}
 		if (
-			TaskTussleService.isForcedItem(getCarried()) ||
-			TaskTussleService.isForcedItem(clicked) ||
+			ForcedItems.isForcedItem(getCarried()) ||
+			ForcedItems.isForcedItem(clicked) ||
 			input == ContainerInput.SWAP && button in 0 until player.inventory.containerSize &&
-				TaskTussleService.isForcedItem(player.inventory.getItem(button))
+				ForcedItems.isForcedItem(player.inventory.getItem(button))
 		) {
 			callback.cancel()
 			if (player is ServerPlayer) player.containerMenu.broadcastFullState()

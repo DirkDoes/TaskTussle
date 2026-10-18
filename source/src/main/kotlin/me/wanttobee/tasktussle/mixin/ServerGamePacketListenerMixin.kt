@@ -1,6 +1,6 @@
 package me.wanttobee.tasktussle.mixin
 
-import me.wanttobee.tasktussle.TaskTussleService
+import me.wanttobee.tasktussle.items.ForcedItems
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket
 import net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket
 import net.minecraft.server.level.ServerPlayer
@@ -19,9 +19,9 @@ abstract class ServerGamePacketListenerMixin {
 	private fun preventForcedItemAction(packet: ServerboundPlayerActionPacket, callback: CallbackInfo) {
 		val locked = when (packet.action) {
 			ServerboundPlayerActionPacket.Action.DROP_ITEM,
-			ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS -> TaskTussleService.isForcedItem(player.mainHandItem)
+			ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS -> ForcedItems.isForcedItem(player.mainHandItem)
 			ServerboundPlayerActionPacket.Action.SWAP_ITEM_WITH_OFFHAND ->
-				TaskTussleService.isForcedItem(player.mainHandItem) || TaskTussleService.isForcedItem(player.offhandItem)
+				ForcedItems.isForcedItem(player.mainHandItem) || ForcedItems.isForcedItem(player.offhandItem)
 			else -> false
 		}
 		if (locked) reject(callback)
@@ -31,8 +31,8 @@ abstract class ServerGamePacketListenerMixin {
 	private fun preventCreativeForcedItemMove(packet: ServerboundSetCreativeModeSlotPacket, callback: CallbackInfo) {
 		val slot = packet.slotNum().toInt()
 		if (
-			TaskTussleService.isForcedItem(packet.itemStack()) ||
-			slot in 1..45 && TaskTussleService.isForcedItem(player.inventoryMenu.getSlot(slot).item)
+			ForcedItems.isForcedItem(packet.itemStack()) ||
+			slot in 1..45 && ForcedItems.isForcedItem(player.inventoryMenu.getSlot(slot).item)
 		) reject(callback)
 	}
 

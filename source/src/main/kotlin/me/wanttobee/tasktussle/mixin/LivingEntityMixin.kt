@@ -1,7 +1,7 @@
 package me.wanttobee.tasktussle.mixin
 
 import com.llamalad7.mixinextras.sugar.Local
-import me.wanttobee.tasktussle.TaskTussleSounds
+import me.wanttobee.tasktussle.sounds.TaskTussleSounds
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.item.ItemStack

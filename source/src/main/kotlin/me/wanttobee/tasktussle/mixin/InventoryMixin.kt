@@ -1,6 +1,6 @@
 package me.wanttobee.tasktussle.mixin
 
-import me.wanttobee.tasktussle.TaskTussleService
+import me.wanttobee.tasktussle.items.ForcedItems
 import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.item.ItemStack
 import org.spongepowered.asm.mixin.Mixin
@@ -15,6 +15,6 @@ abstract class InventoryMixin {
 
 	@Inject(method = ["removeFromSelected(Z)Lnet/minecraft/world/item/ItemStack;"], at = [At("HEAD")], cancellable = true)
 	private fun preventForcedItemRemoval(dropAll: Boolean, callback: CallbackInfoReturnable<ItemStack>) {
-		if (TaskTussleService.isForcedItem(getSelectedItem())) callback.returnValue = ItemStack.EMPTY
+		if (ForcedItems.isForcedItem(getSelectedItem())) callback.returnValue = ItemStack.EMPTY
 	}
 }
