@@ -14,6 +14,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import net.fabricmc.fabric.api.event.player.UseBlockCallback
 import net.fabricmc.fabric.api.event.player.UseEntityCallback
 import net.fabricmc.fabric.api.event.player.UseItemCallback
+import net.fabricmc.fabric.api.event.player.AttackBlockCallback
+import net.fabricmc.fabric.api.event.player.AttackEntityCallback
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.InteractionHand
@@ -34,12 +36,24 @@ object TaskTussleMod : DedicatedServerModInitializer {
 		ServerTickEvents.END_SERVER_TICK.register { server -> system.tick(server); lobby.tick(server); TaskTussleSounds.tick(server) }
 		ServerPlayConnectionEvents.JOIN.register { handler, _, _ ->
 			system.onJoin(handler.player)
+			system.pvp.onJoin(handler.player)
 			if (lobby.active) lobby.apply(handler.player)
 			TaskTussleResourcePackServer.send(handler.player)
 		}
-		ServerPlayConnectionEvents.DISCONNECT.register { handler, _ -> if (lobby.active) lobby.remove(handler.player) }
+		ServerPlayConnectionEvents.DISCONNECT.register { handler, _ ->
+			system.pvp.onDisconnect(handler.player)
+			if (lobby.active) lobby.remove(handler.player)
+		}
 		ServerPlayerEvents.AFTER_RESPAWN.register { _, player, _ -> system.onJoin(player) }
-		ServerLivingEntityEvents.ALLOW_DAMAGE.register { entity, _, amount -> entity !is ServerPlayer || !lobby.active || amount < entity.health }
+		ServerLivingEntityEvents.ALLOW_DAMAGE.register { entity, source, amount ->
+			entity !is ServerPlayer || (system.pvp.allowsDamage(entity, source) && (!lobby.active || amount < entity.health))
+		}
+		AttackBlockCallback.EVENT.register { player, _, hand, _, _ ->
+			if (system.items.isPvpToggle(player.getItemInHand(hand))) InteractionResult.FAIL else InteractionResult.PASS
+		}
+		AttackEntityCallback.EVENT.register { player, _, hand, _, _ ->
+			if (system.items.isPvpToggle(player.getItemInHand(hand))) InteractionResult.FAIL else InteractionResult.PASS
+		}
 		UseItemCallback.EVENT.register { player, world, hand -> useTool(player, world, hand) }
 		UseBlockCallback.EVENT.register { player, world, hand, _ -> useTool(player, world, hand) }
 		UseEntityCallback.EVENT.register { player, world, hand, _, _ -> useTool(player, world, hand) }
@@ -49,6 +63,7 @@ object TaskTussleMod : DedicatedServerModInitializer {
 		if (world.isClientSide || player !is ServerPlayer) return InteractionResult.PASS
 		val item = player.getItemInHand(hand)
 		when {
+			system.items.isPvpToggle(item) -> system.pvp.useToggle(player)
 			system.items.isSettingsTool(item) -> system.menus.openReadOnlySettings(player)
 			system.items.isTaskBrowser(item) -> system.menus.openTaskBrowser(player)
 			system.items.isCard(item) -> system.openCard(player)
@@ -61,5 +76,8 @@ object TaskTussleMod : DedicatedServerModInitializer {
 	}
 
 	internal fun isDeliverySpot(stack: net.minecraft.world.item.ItemStack) = system.items.isDeliverySpot(stack)
+	internal fun isPvpToggle(stack: net.minecraft.world.item.ItemStack) = system.items.isPvpToggle(stack)
+	internal fun togglePvp(player: ServerPlayer) = system.pvp.toggle(player)
+	internal fun usePvpToggle(player: ServerPlayer) = system.pvp.useToggle(player)
 	internal fun clickDeliverySpot(player: ServerPlayer, stack: net.minecraft.world.item.ItemStack) = system.clickDeliverySpot(player, stack)
 }

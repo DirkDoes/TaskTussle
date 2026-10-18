@@ -33,6 +33,12 @@ The default task catalogs are copied to `config/tasktussle/` on first start. The
 
 Use `/tt help` in game for commands.
 
+The PvP setting between team selection and game time controls damage across teams: on, opt-in/out, or off. Teammates can always damage each other. In opt-in/out mode, players start opted in and can toggle the sword/peace icon beside their settings compass, or use the Team Maker button. The PvP-off setting also uses the peace icon. Choices lock and the toggle disappears when a game starts; both players must be opted in for cross-team melee or player-fired projectile damage. Environmental damage such as lava is unchanged.
+
+The compass opens **Task Tussle Settings Preview**; `/tt settings` opens the editable menu. `/tt worldsetup start` sets time to 0 and freezes it, and `/tt worldsetup clear` resumes time.
+
+In opt-in/out mode, names above players and in the player list show an iron sword for opted-in players or the resource pack's `peacefull.png` for opted-out players. Icons update with each choice, remain during the game, and disappear in the other PvP modes.
+
 ## Repository layout
 
 - `source/` — Kotlin source, tests, Gradle wrapper, and Fabric metadata
@@ -54,6 +60,7 @@ Packages under `source/src/main/kotlin/me/wanttobee/tasktussle/`:
 | `games/bingo` | Bingo's card, team, game, generation rules, win conditions, and settings. |
 | `tasks/obtainTask`, `tasks/achievementTask`, `tasks/clickTask` | Each task type's checks, presentation, manager, and settings; file-backed types also supply their catalog content. |
 | `teams` | Team membership, manual selection, and team icons. |
+| `pvp` | Cross-team damage rules and players' pre-game opt-in/out choices. |
 | `commands`, `items`, `world`, `sounds`, `resourcepack`, `config`, `util`, `mixin` | Fabric integration and supporting services. |
 
 To add a task type, extend `ITask`, implement `ITaskManager`, and register its manager in `TaskTussleGrouper.taskManagers`. Each generated task is a fresh instance, even when teams share the same template. Implement `ITaskFiles` for a file-backed task type, or supply a repeatable template for a task such as Click. Managers supply their own weight/settings accessors and settings menu; the shared generator, completion loop, and catalog browser dispatch through those contracts.

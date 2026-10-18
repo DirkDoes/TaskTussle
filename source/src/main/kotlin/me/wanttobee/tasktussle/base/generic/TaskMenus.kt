@@ -35,7 +35,7 @@ class TaskMenus(private val system: TaskTussleSystem) {
 	fun openReadOnlySettings(player: ServerPlayer): Boolean {
 		if (game != null || selection != null) return false
 		openMenu(player, SimpleMenuProvider(
-			{ id, inventory, _ -> SettingsMenu(id, inventory, system, true) }, Component.literal("Task Tussle Settings"),
+			{ id, inventory, _ -> SettingsMenu(id, inventory, system, true) }, Component.literal("Task Tussle Settings Preview"),
 		))
 		return true
 	}

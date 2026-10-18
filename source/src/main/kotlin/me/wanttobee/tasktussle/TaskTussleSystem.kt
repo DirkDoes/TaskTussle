@@ -14,8 +14,10 @@ import me.wanttobee.tasktussle.base.tasks.TaskFactory
 import me.wanttobee.tasktussle.base.tasks.TaskOptionsMenu
 import me.wanttobee.tasktussle.base.tasks.deliveryTask
 import me.wanttobee.tasktussle.items.ForcedItems
+import me.wanttobee.tasktussle.pvp.PvpSystem
 import me.wanttobee.tasktussle.sounds.TaskTussleSounds
 import me.wanttobee.tasktussle.teams.Team
+import me.wanttobee.tasktussle.teams.TeamMakerMenu
 import me.wanttobee.tasktussle.teams.TeamSystem
 import me.wanttobee.tasktussle.teams.teamColor
 import me.wanttobee.tasktussle.util.GameTimer
@@ -47,6 +49,7 @@ class TaskTussleSystem(
 	val teams = TeamSystem(this)
 	val menus = TaskMenus(this)
 	val items = ForcedItems(this)
+	val pvp = PvpSystem(this)
 	private val timer = GameTimer(settings)
 	var logEnabled = true
 	private var game: ITTGame? = null
@@ -84,6 +87,10 @@ class TaskTussleSystem(
 		if (teams.isEmpty()) return fail(commander, "Cant start a game without teams")
 		val created = manager.create(teams, settings, taskFactory) ?: return fail(commander, "Cant start a game, task generation failed")
 		game = created
+		server.playerList.players.forEach { player ->
+			items.syncPvpToggle(player)
+			if (player.containerMenu is TeamMakerMenu) player.closeContainer()
+		}
 		server.playerList.players.forEach(items::removeSettingsTool)
 		server.playerList.players.forEach(items::removeTaskBrowser)
 		items.deliverySpotLearned.clear()
@@ -105,7 +112,10 @@ class TaskTussleSystem(
 
 	fun tick(server: MinecraftServer) {
 		takeDue(server.tickCount, delayedActions).forEach { it() }
-		if (server.tickCount % 20 == 0) items.restoreForcedItems(server)
+		if (server.tickCount % 20 == 0) {
+			items.restoreForcedItems(server)
+			pvp.refreshNames(server)
+		}
 		val active = game ?: return
 		if (active.finished || active.paused) return
 		if (server.tickCount % 5 == 0) checkTasks(server, active)
@@ -129,6 +139,7 @@ class TaskTussleSystem(
 		server.playerList.players.forEach(items::removeGameItems)
 		server.playerList.players.forEach(items::giveSettingsTool)
 		server.playerList.players.forEach(items::giveTaskBrowser)
+		server.playerList.players.forEach(items::syncPvpToggle)
 		commander?.sendSystemMessage(tagged("stopped the running game", ChatFormatting.GREEN))
 		return true
 	}
@@ -191,6 +202,7 @@ class TaskTussleSystem(
 	}
 
 	fun onJoin(player: ServerPlayer) {
+		items.syncPvpToggle(player)
 		if (game == null && teams.selection == null) items.giveSettingsTool(player)
 		if (game == null && teams.selection == null) items.giveTaskBrowser(player)
 		if (game?.teams?.any { player.uuid in it.members } == true) {
@@ -202,6 +214,7 @@ class TaskTussleSystem(
 	}
 
 	fun shutdown(server: MinecraftServer) {
+		pvp.clearNames(server)
 		timer.clearTimerBar()
 		delayedActions.clear()
 		teams.selection = null

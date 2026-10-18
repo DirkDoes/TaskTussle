@@ -23,6 +23,7 @@ class TeamSystem(private val system: TaskTussleSystem) {
 		starter.level().server.playerList.players.forEach(system.items::removeSettingsTool)
 		starter.level().server.playerList.players.forEach(system.items::removeTaskBrowser)
 		selection = TeamSelection(teamCount, starter.uuid, startsGame = startsGame, manager = manager)
+		starter.level().server.playerList.players.forEach(system.items::syncPvpToggle)
 		starter.level().server.playerList.players.forEach(system.items::giveTeamNavigator)
 		system.items.giveTeamFinisher(starter)
 		starter.sendSystemMessage(tagged("use the Team Navigator Tool to choose teams, then Detonate Current Teams", ChatFormatting.GREEN))

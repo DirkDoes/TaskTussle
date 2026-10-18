@@ -23,6 +23,12 @@ abstract class AbstractContainerMenuMixin {
 	@Inject(method = ["clicked(IILnet/minecraft/world/inventory/ContainerInput;Lnet/minecraft/world/entity/player/Player;)V"], at = [At("HEAD")], cancellable = true)
 	private fun preventForcedItemMove(slotId: Int, button: Int, input: ContainerInput, player: Player, callback: CallbackInfo) {
 		val clicked = if (slotId >= 0 && isValidSlotIndex(slotId)) getSlot(slotId).item else ItemStack.EMPTY
+		if (player is ServerPlayer && TaskTussleMod.isPvpToggle(clicked) && input == ContainerInput.PICKUP && button in 0..1) {
+			TaskTussleMod.togglePvp(player)
+			callback.cancel()
+			player.containerMenu.broadcastFullState()
+			return
+		}
 		if (player is ServerPlayer && TaskTussleMod.isDeliverySpot(clicked)) {
 			TaskTussleMod.clickDeliverySpot(player, getCarried())
 			callback.cancel()

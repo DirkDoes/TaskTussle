@@ -23,6 +23,7 @@ class ForcedItemTest {
 		assertTrue(ForcedItems.isForcedMarker("team_finisher"))
 		assertTrue(ForcedItems.isForcedMarker("delivery_spot"))
 		assertTrue(ForcedItems.isForcedMarker("settings"))
+		assertTrue(ForcedItems.isForcedMarker("pvp_toggle"))
 		assertTrue(ForcedItems.isForcedMarker("task_browser"))
 		assertFalse(ForcedItems.isForcedMarker("anything_else"))
 		assertFalse(ForcedItems.isForcedMarker(null))

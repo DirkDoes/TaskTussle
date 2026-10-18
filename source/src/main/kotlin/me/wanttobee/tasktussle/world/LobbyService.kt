@@ -13,6 +13,8 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.Relative
+import net.minecraft.world.clock.WorldClocks
+import net.minecraft.world.level.gamerules.GameRules
 import net.minecraft.world.level.GameType
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.state.BlockState
@@ -30,6 +32,10 @@ class LobbyService {
 	fun start(invoker: ServerPlayer) {
 		if (active) clear(invoker.level().server)
 		val targetLevel = invoker.level()
+		val server = targetLevel.server
+		val clock = targetLevel.dimensionType().defaultClock().orElseGet { server.registryAccess().getOrThrow(WorldClocks.OVERWORLD) }
+		server.clockManager().setTotalTicks(clock, 0)
+		server.gameRules.set(GameRules.ADVANCE_TIME, false, server)
 		val target = invoker.blockPosition()
 		val border = targetLevel.worldBorder
 		level = targetLevel
@@ -44,6 +50,7 @@ class LobbyService {
 
 	fun clear(server: MinecraftServer) {
 		val targetLevel = level ?: return
+		server.gameRules.set(GameRules.ADVANCE_TIME, true, server)
 		removeParkour()
 		oldBorder?.let { (x, z, size) ->
 			targetLevel.worldBorder.setCenter(x, z)

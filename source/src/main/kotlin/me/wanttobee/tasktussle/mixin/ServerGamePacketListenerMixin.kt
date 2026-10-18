@@ -1,8 +1,10 @@
 package me.wanttobee.tasktussle.mixin
 
 import me.wanttobee.tasktussle.items.ForcedItems
+import me.wanttobee.tasktussle.TaskTussleMod
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket
 import net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket
+import net.minecraft.network.protocol.game.ServerboundSwingPacket
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.server.network.ServerGamePacketListenerImpl
 import org.spongepowered.asm.mixin.Mixin
@@ -14,6 +16,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 @Mixin(ServerGamePacketListenerImpl::class)
 abstract class ServerGamePacketListenerMixin {
 	@Shadow lateinit var player: ServerPlayer
+
+	@Inject(method = ["handleAnimate"], at = [At("TAIL")])
+	private fun togglePvpOnSwing(packet: ServerboundSwingPacket, callback: CallbackInfo) {
+		if (TaskTussleMod.isPvpToggle(player.getItemInHand(packet.hand))) TaskTussleMod.usePvpToggle(player)
+	}
 
 	@Inject(method = ["handlePlayerAction"], at = [At("HEAD")], cancellable = true)
 	private fun preventForcedItemAction(packet: ServerboundPlayerActionPacket, callback: CallbackInfo) {

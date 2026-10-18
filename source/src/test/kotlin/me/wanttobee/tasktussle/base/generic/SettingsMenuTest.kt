@@ -1,13 +1,16 @@
 package me.wanttobee.tasktussle.base.generic
 
 import me.wanttobee.tasktussle.TaskTussleSystem
+import me.wanttobee.tasktussle.pvp.PvpMode
 import net.minecraft.SharedConstants
 import net.minecraft.core.component.DataComponents
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.data.registries.VanillaRegistries
+import net.minecraft.resources.Identifier
 import net.minecraft.server.Bootstrap
 import net.minecraft.world.entity.EntityEquipment
 import net.minecraft.world.entity.player.Inventory
+import net.minecraft.world.item.Items
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
@@ -42,6 +45,17 @@ class SettingsMenuTest {
 			menu.broadcastChanges()
 			assertEquals("Hard Ratio: 0", menu.getSlot(3).item.get(DataComponents.CUSTOM_NAME)?.string)
 			assertEquals(null, menu.getSlot(3).item.get(DataComponents.ENCHANTMENT_GLINT_OVERRIDE))
+		}
+		for ((mode, icon) in listOf(PvpMode.ON to Items.IRON_SWORD, PvpMode.OPT_IN_OUT to Items.WOODEN_SWORD, PvpMode.OFF to Items.PAPER)) {
+			system.settings.pvpMode = mode
+			viewers.forEach { menu ->
+				menu.broadcastChanges()
+				assertEquals("Chose Teams: off", menu.getSlot(4).item.get(DataComponents.CUSTOM_NAME)?.string)
+				assertEquals(icon, menu.getSlot(5).item.item)
+				if (mode == PvpMode.OFF) assertEquals(Identifier.parse("tasktussle:peacefull"), menu.getSlot(5).item.get(DataComponents.ITEM_MODEL))
+				assertEquals("PvP: ${mode.label}", menu.getSlot(5).item.get(DataComponents.CUSTOM_NAME)?.string)
+				assertEquals(Items.CLOCK, menu.getSlot(6).item.item)
+			}
 		}
 	}
 }

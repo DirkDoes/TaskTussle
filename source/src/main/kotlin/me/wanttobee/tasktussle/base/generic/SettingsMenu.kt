@@ -3,7 +3,9 @@ package me.wanttobee.tasktussle.base.generic
 import kotlin.math.max
 import me.wanttobee.tasktussle.TaskTussleSystem
 import me.wanttobee.tasktussle.base.tasks.ITaskManager
+import me.wanttobee.tasktussle.pvp.PvpMode
 import me.wanttobee.tasktussle.teams.TEAMS_MODEL
+import me.wanttobee.tasktussle.teams.TeamMakerMenu
 import me.wanttobee.tasktussle.util.message
 import net.minecraft.ChatFormatting
 import net.minecraft.core.component.DataComponents
@@ -45,7 +47,15 @@ class SettingsMenu(
 		setting(2, Items.NETHER_BRICK, "Normal Ratio: ${settings.mediumRatio}", ratioLore, settings.mediumRatio, settings.mediumRatio > 0) { _, click -> settings.mediumRatio = ratioChange(settings.mediumRatio, click) }
 		setting(3, Items.NETHERITE_INGOT, "Hard Ratio: ${settings.hardRatio}", ratioLore, settings.hardRatio, settings.hardRatio > 0) { _, click -> settings.hardRatio = ratioChange(settings.hardRatio, click) }
 		setting(4, Items.PAPER, "Chose Teams: ${if (settings.chooseTeams) "on" else "off"}", enchanted = settings.chooseTeams, model = TEAMS_MODEL) { _, _ -> settings.chooseTeams = !settings.chooseTeams }
-		setting(5, Items.CLOCK, "Game Time: ${if (settings.gameMinutes == 0) "disabled" else "${settings.gameMinutes} minutes"}", enchanted = settings.gameMinutes > 0) { player, _ -> system.menus.openTimeSettings(player) }
+		setting(5, settings.pvpMode.icon, "PvP: ${settings.pvpMode.label}", listOf("Click: Change cross-team PvP", "Teammate damage is always enabled"), model = settings.pvpMode.iconModel) { player, _ ->
+			settings.pvpMode = PvpMode.entries[(settings.pvpMode.ordinal + 1) % PvpMode.entries.size]
+			system.pvp.refreshNames(player.level().server)
+			player.level().server.playerList.players.forEach {
+				system.items.syncPvpToggle(it)
+				(it.containerMenu as? TeamMakerMenu)?.refresh()
+			}
+		}
+		setting(6, Items.CLOCK, "Game Time: ${if (settings.gameMinutes == 0) "disabled" else "${settings.gameMinutes} minutes"}", enchanted = settings.gameMinutes > 0) { player, _ -> system.menus.openTimeSettings(player) }
 		val preset = named(Items.WRITABLE_BOOK, "Load a pre-set", ChatFormatting.GOLD)
 		if (readOnly) display(8, preset) else button(8, preset) { player, _ -> player.sendSystemMessage(message("Does nothing yet", ChatFormatting.RED)) }
 

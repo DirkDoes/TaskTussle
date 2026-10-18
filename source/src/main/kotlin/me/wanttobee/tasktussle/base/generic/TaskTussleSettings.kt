@@ -1,8 +1,11 @@
 package me.wanttobee.tasktussle.base.generic
 
+import me.wanttobee.tasktussle.pvp.PvpMode
+
 data class TaskTussleSettings(
 	var cardVisibility: String = "progress only",
 	var chooseTeams: Boolean = false,
+	var pvpMode: PvpMode = PvpMode.ON,
 	var easyRatio: Int = 13,
 	var mediumRatio: Int = 8,
 	var hardRatio: Int = 4,
