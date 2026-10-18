@@ -698,16 +698,19 @@ class TaskTussleService {
 	fun advancementIcon(id: Identifier): ItemStack {
 		if (!settings.customAdvancementIcons) return ItemStack(Items.KNOWLEDGE_BOOK)
 		val icon = server?.advancements?.get(id)?.value?.display?.orElse(null)?.icon?.create() ?: ItemStack(Items.KNOWLEDGE_BOOK)
-		return (if (icon.item is SmithingTemplateItem) ItemStack(Items.PAPER) else icon).apply {
+		val style = advancementIcons[id.toString()]
+		val mappedItem = style?.let { BuiltInRegistries.ITEM.getValue(Identifier.parse(it.item)) }
+		val selected = if (mappedItem != null && icon.item != mappedItem) ItemStack(mappedItem) else icon
+		return (if (selected.item is SmithingTemplateItem) ItemStack(Items.PAPER) else selected).apply {
 			set(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.DEFAULT
 				.withHidden(DataComponents.ATTRIBUTE_MODIFIERS, true)
 				.withHidden(DataComponents.POT_DECORATIONS, true)
 				.withHidden(DataComponents.BANNER_PATTERNS, true)
 				.withHidden(DataComponents.BEES, true)
 				.withHidden(DataComponents.BLOCK_STATE, true))
-			if (id.namespace == "minecraft") {
+			if (style != null) {
 				set(DataComponents.ITEM_MODEL, ADVANCEMENT_ICON_MODEL)
-				set(DataComponents.CUSTOM_MODEL_DATA, CustomModelData(emptyList(), emptyList(), listOf(id.toString()), emptyList()))
+				set(DataComponents.CUSTOM_MODEL_DATA, CustomModelData(emptyList(), emptyList(), listOf(style.plate, style.item), emptyList()))
 			}
 		}
 	}

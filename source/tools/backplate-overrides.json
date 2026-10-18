@@ -1,0 +1,457 @@
+{
+  "minecraft:decorated_pot": {
+    "gui_translation": [
+      0.25,
+      0,
+      0
+    ],
+    "fixed_model": {
+      "type": "minecraft:composite",
+      "models": [
+        {
+          "type": "minecraft:special",
+          "base": "minecraft:item/decorated_pot",
+          "model": {
+            "type": "minecraft:decorated_pot"
+          },
+          "transformation": [
+            0.7143725032679267,
+            0.0,
+            0.7143725032679267,
+            -0.21437250326792667,
+            0.3571862516339633,
+            0.8749240596405644,
+            -0.3571862516339632,
+            0.06253797017971774,
+            -0.6186647355951065,
+            0.5051376413539599,
+            0.6186647355951065,
+            1.181956643645718,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      ]
+    }
+  },
+  "minecraft:red_bed": {
+    "gui_translation": [
+      0.1875,
+      0.1875,
+      0
+    ]
+  },
+  "minecraft:dragon_head": {
+    "gui_translation": [
+      0.25,
+      0,
+      0
+    ],
+    "fixed_model": {
+      "type": "minecraft:composite",
+      "models": [
+        {
+          "type": "minecraft:special",
+          "base": "minecraft:item/dragon_head",
+          "model": {
+            "type": "minecraft:head",
+            "kind": "dragon"
+          },
+          "transformation": [
+            0.3460690652226969,
+            0.0,
+            -0.3460690652226969,
+            0.3702241005414887,
+            0.17303453261134843,
+            -0.4238463127787794,
+            0.1730345326113484,
+            0.17113204294747963,
+            -0.29970460194678933,
+            -0.24470778277785854,
+            -0.29970460194678933,
+            0.7671465950389349,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      ]
+    }
+  },
+  "minecraft:wither_skeleton_skull": {
+    "gui_translation": [
+      0.25,
+      0,
+      0
+    ],
+    "fixed_model": {
+      "type": "minecraft:composite",
+      "models": [
+        {
+          "type": "minecraft:special",
+          "base": "minecraft:item/template_skull",
+          "model": {
+            "type": "minecraft:head",
+            "kind": "wither_skeleton"
+          },
+          "transformation": [
+            0.6742346141747673,
+            0.0,
+            -0.6742346141747673,
+            0.5,
+            0.3371173070873836,
+            -0.825765385825233,
+            0.3371173070873835,
+            0.043558653543691817,
+            -0.583904303986148,
+            -0.47675586779367335,
+            -0.583904303986148,
+            0.8622646519930739,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      ]
+    }
+  },
+  "minecraft:chest": {
+    "gui_translation": [
+      0.25,
+      0,
+      0
+    ],
+    "fixed_model": {
+      "type": "minecraft:composite",
+      "models": [
+        {
+          "type": "minecraft:select",
+          "cases": [
+            {
+              "model": {
+                "type": "minecraft:special",
+                "base": "minecraft:item/chest",
+                "model": {
+                  "type": "minecraft:chest",
+                  "texture": "minecraft:christmas"
+                },
+                "transformation": [
+                  0.7705538447711625,
+                  0.0,
+                  0.7705538447711625,
+                  -0.2705538447711625,
+                  0.3852769223855812,
+                  0.9437318695145519,
+                  -0.38527692238558114,
+                  0.08711730708738341,
+                  -0.6673192045555977,
+                  0.5448638489070552,
+                  0.6673192045555977,
+                  1.224529303986148,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0
+                ]
+              },
+              "when": [
+                "12-24",
+                "12-25",
+                "12-26"
+              ]
+            }
+          ],
+          "fallback": {
+            "type": "minecraft:special",
+            "base": "minecraft:item/chest",
+            "model": {
+              "type": "minecraft:chest",
+              "texture": "minecraft:normal"
+            },
+            "transformation": [
+              0.7705538447711625,
+              0.0,
+              0.7705538447711625,
+              -0.2705538447711625,
+              0.3852769223855812,
+              0.9437318695145519,
+              -0.38527692238558114,
+              0.08711730708738341,
+              -0.6673192045555977,
+              0.5448638489070552,
+              0.6673192045555977,
+              1.224529303986148,
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          "pattern": "MM-dd",
+          "property": "minecraft:local_time"
+        }
+      ]
+    }
+  },
+  "minecraft:white_banner": {
+    "fixed_model": {
+      "type": "minecraft:composite",
+      "models": [
+        {
+          "type": "minecraft:special",
+          "base": "minecraft:item/template_banner",
+          "model": {
+            "type": "minecraft:banner",
+            "color": "white"
+          },
+          "transformation": [
+            0.6,
+            0.0,
+            0.0,
+            0.5,
+            0.0,
+            -0.6,
+            0.0,
+            -0.25,
+            0.0,
+            0.0,
+            -0.6,
+            0.6781250000000001,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        }
+      ]
+    }
+  },
+  "minecraft:trident": {
+    "fixed_model": {
+      "type": "minecraft:composite",
+      "models": [
+        {
+          "type": "minecraft:select",
+          "cases": [
+            {
+              "model": {
+                "type": "minecraft:model",
+                "model": "minecraft:item/trident",
+                "transformation": [
+                  0.24394291825513248,
+                  0.0,
+                  0.24394291825513248,
+                  0.5,
+                  0.12197145912756623,
+                  0.29876783804527113,
+                  -0.1219714591275662,
+                  0.2759241214660466,
+                  -0.21126076428225543,
+                  0.17249369172063977,
+                  0.21126076428225543,
+                  0.7454739006065696,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0
+                ]
+              },
+              "when": [
+                "gui",
+                "ground",
+                "fixed",
+                "on_shelf"
+              ]
+            }
+          ],
+          "fallback": {
+            "type": "minecraft:condition",
+            "on_false": {
+              "type": "minecraft:special",
+              "base": "minecraft:item/trident_in_hand",
+              "model": {
+                "type": "minecraft:trident"
+              },
+              "transformation": [
+                0.48788583651026496,
+                0.0,
+                -0.48788583651026496,
+                0.2499999999999999,
+                0.24394291825513245,
+                -0.5975356760905423,
+                0.2439429182551324,
+                -0.4481517570679068,
+                -0.42252152856451086,
+                -0.34498738344127955,
+                -0.42252152856451086,
+                0.3659478012131392,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            },
+            "on_true": {
+              "type": "minecraft:special",
+              "base": "minecraft:item/trident_throwing",
+              "model": {
+                "type": "minecraft:trident"
+              },
+              "transformation": [
+                0.48788583651026496,
+                0.0,
+                -0.48788583651026496,
+                0.2499999999999999,
+                0.24394291825513245,
+                -0.5975356760905423,
+                0.2439429182551324,
+                -0.4481517570679068,
+                -0.42252152856451086,
+                -0.34498738344127955,
+                -0.42252152856451086,
+                0.3659478012131392,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            },
+            "property": "minecraft:using_item"
+          },
+          "property": "minecraft:display_context"
+        }
+      ]
+    }
+  },
+  "minecraft:shield": {
+    "fixed_model": {
+      "type": "minecraft:composite",
+      "models": [
+        {
+          "type": "minecraft:condition",
+          "on_false": {
+            "type": "minecraft:special",
+            "base": "minecraft:item/shield",
+            "model": {
+              "type": "minecraft:shield"
+            },
+            "transformation": [
+              0.6155609832710015,
+              0.0,
+              -0.6155609832710015,
+              -0.06907247854529286,
+              0.3077804916355007,
+              -0.7539051572899228,
+              0.30778049163550064,
+              0.0174907847271919,
+              -0.5330914490912152,
+              -0.4352673455047841,
+              -0.5330914490912152,
+              0.5921328999210366,
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          "on_true": {
+            "type": "minecraft:special",
+            "base": "minecraft:item/shield_blocking",
+            "model": {
+              "type": "minecraft:shield"
+            },
+            "transformation": [
+              -0.3385585407990509,
+              0.0,
+              0.3385585407990508,
+              0.5317398631999111,
+              0.1692792703995254,
+              -0.4146478365094576,
+              0.16927927039952537,
+              0.5158699315999555,
+              0.2932002970001683,
+              0.23939704002763124,
+              0.2932002970001684,
+              0.13682690504342976,
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          "property": "minecraft:using_item"
+        }
+      ]
+    },
+    "volume": false
+  },
+  "minecraft:spyglass": {
+    "fixed_model": {
+      "type": "minecraft:composite",
+      "models": [
+        {
+          "type": "minecraft:select",
+          "cases": [
+            {
+              "model": {
+                "type": "minecraft:model",
+                "model": "minecraft:item/spyglass",
+                "transformation": [
+                  0.7645908753602155,
+                  0.0,
+                  0.7645908753602155,
+                  -0.2645908753602155,
+                  0.3822954376801077,
+                  0.9364287533102297,
+                  -0.38229543768010765,
+                  0.03710130968448028,
+                  -0.6621551215637281,
+                  0.5406473928005666,
+                  0.6621551215637281,
+                  0.5802617202949275,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0
+                ]
+              },
+              "when": [
+                "gui",
+                "ground",
+                "fixed",
+                "on_shelf"
+              ]
+            }
+          ],
+          "fallback": {
+            "type": "minecraft:model",
+            "model": "minecraft:item/spyglass_in_hand",
+            "transformation": [
+              -0.5097272502401436,
+              0.0,
+              -0.5097272502401436,
+              1.0097272502401435,
+              0.25486362512007177,
+              0.624285835540153,
+              -0.25486362512007177,
+              0.19140087312298687,
+              0.441436747709152,
+              -0.3604315952003777,
+              -0.44143674770915214,
+              0.5089921864700484,
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          "property": "minecraft:display_context"
+        }
+      ]
+    }
+  }
+}
