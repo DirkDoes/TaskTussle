@@ -1,0 +1,25 @@
+{
+  "providers": [
+    {
+      "type": "space",
+      "advances": {
+        "\uF800": -8,
+        "\uF803": -169
+      }
+    },
+    {
+      "type": "bitmap",
+      "file": "tasktussle:gui/bingo_card1.png",
+      "height": 256,
+      "ascent": 13,
+      "chars": ["\uF801"]
+    },
+    {
+      "type": "bitmap",
+      "file": "tasktussle:gui/bingo_card2.png",
+      "height": 256,
+      "ascent": 13,
+      "chars": ["\uF802"]
+    }
+  ]
+}

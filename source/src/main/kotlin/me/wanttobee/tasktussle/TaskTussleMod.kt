@@ -1,5 +1,6 @@
 package me.wanttobee.tasktussle
 
+import me.wanttobee.tasktussle.base.tasks.TaskEvent
 import me.wanttobee.tasktussle.commands.TaskTussleCommands
 import me.wanttobee.tasktussle.config.TaskTussleConfig
 import me.wanttobee.tasktussle.resourcepack.TaskTussleResourcePackServer
@@ -80,4 +81,5 @@ object TaskTussleMod : DedicatedServerModInitializer {
 	internal fun togglePvp(player: ServerPlayer) = system.pvp.toggle(player)
 	internal fun usePvpToggle(player: ServerPlayer) = system.pvp.useToggle(player)
 	internal fun clickDeliverySpot(player: ServerPlayer, stack: net.minecraft.world.item.ItemStack) = system.clickDeliverySpot(player, stack)
+	internal fun onTaskEvent(player: ServerPlayer, event: TaskEvent) = system.onTaskEvent(player, event)
 }

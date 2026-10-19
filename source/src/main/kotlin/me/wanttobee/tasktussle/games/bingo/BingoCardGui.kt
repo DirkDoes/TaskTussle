@@ -9,6 +9,7 @@ import me.wanttobee.tasktussle.base.games.onlinePlayers
 import me.wanttobee.tasktussle.base.generic.ActionChestMenu
 import me.wanttobee.tasktussle.base.generic.named
 import me.wanttobee.tasktussle.base.tasks.taskStack
+import me.wanttobee.tasktussle.resourcepack.TaskTussleResourcePackServer
 import me.wanttobee.tasktussle.teams.emptyTeamSlot
 import me.wanttobee.tasktussle.teams.teamItem
 import net.minecraft.world.entity.player.Inventory
@@ -21,21 +22,24 @@ class BingoCardGui(
 	private val team: ITTGameTeam,
 	private val viewersTeam: ITTGameTeam?,
 ) : ActionChestMenu(containerId, inventory, 5), ITTCardGui {
+	private val layout = BingoCardLayout(game.teams.size)
 	init { refresh() }
 
 	override fun refresh() {
 		clear()
-		fill()
+		if (!TaskTussleResourcePackServer.active) {
+			fill()
+			layout.teamSlots.forEach { display(it, emptyTeamSlot()) }
+		}
 		team.tasks.forEachIndexed { index, task ->
-			val slot = 2 + index % 5 + 9 * (index / 5)
+			val slot = layout.taskSlots[index]
 			val stack = taskStack(system, task)
 			if (!task.completed && !task.failed && viewersTeam == team && !game.paused && !game.finished) {
 				button(slot, stack) { player, click -> system.clickTask(player, team.index, index, click.right) }
 			} else display(slot, stack)
 		}
-		repeat(10) { index -> display(9 * (index % 5) + 8 * (index / 5), emptyTeamSlot()) }
-		game.teams.take(10).forEachIndexed { index, other ->
-			val slot = 9 * (index % 5) + 8 * (index / 5)
+		game.teams.forEachIndexed { index, other ->
+			val slot = layout.teamSlots[index]
 			val private = other == team
 			val visible = private || game.finished || system.settings.cardVisibility == "visible"
 			val progressVisible = private || game.finished || system.settings.cardVisibility != "hidden"

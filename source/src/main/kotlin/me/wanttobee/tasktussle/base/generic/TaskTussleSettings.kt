@@ -12,6 +12,7 @@ data class TaskTussleSettings(
 	var blockWeight: Int = 10,
 	var advancementWeight: Int = 2,
 	var clickWeight: Int = 0,
+	var tradeWeight: Int = 2,
 	var handInItems: Boolean = false,
 	var mutualTasks: Int = 15,
 	var winningCondition: String = "1 line",
@@ -20,5 +21,6 @@ data class TaskTussleSettings(
 	var overtime: String = "draw",
 	var blocksFile: String = "blocks_default.yml",
 	var advancementsFile: String = "advancements_default.yml",
+	var tradesFile: String = "trades_default.yml",
 	var customAdvancementIcons: Boolean = true,
 )

@@ -6,6 +6,7 @@ import me.wanttobee.tasktussle.base.games.ITTGameManager
 import me.wanttobee.tasktussle.base.games.ITTGameTeam
 import me.wanttobee.tasktussle.base.generic.TaskTussleSettings
 import me.wanttobee.tasktussle.base.tasks.TaskFactory
+import me.wanttobee.tasktussle.resourcepack.TaskTussleResourcePackServer
 import me.wanttobee.tasktussle.teams.Team
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
@@ -39,7 +40,8 @@ object BingoManager : ITTGameManager {
 	}
 
 	override fun cardMenu(system: TaskTussleSystem, game: ITTGame, team: ITTGameTeam, viewer: ITTGameTeam?) = SimpleMenuProvider(
-		{ id, inventory, _ -> BingoCardGui(id, inventory, system, game, team, viewer) }, Component.literal(name),
+		{ id, inventory, _ -> BingoCardGui(id, inventory, system, game, team, viewer) },
+		BingoCardLayout(game.teams.size).title(TaskTussleResourcePackServer.active),
 	)
 
 	override fun hasWon(team: ITTGameTeam, settings: TaskTussleSettings) = team.card.hasWon(settings.winningCondition)

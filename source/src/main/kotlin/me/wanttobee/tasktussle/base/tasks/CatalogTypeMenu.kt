@@ -5,6 +5,7 @@ import me.wanttobee.tasktussle.base.generic.ActionHopperMenu
 import me.wanttobee.tasktussle.base.generic.named
 import me.wanttobee.tasktussle.base.generic.separator
 import net.minecraft.ChatFormatting
+import net.minecraft.core.component.DataComponents
 import net.minecraft.world.entity.player.Inventory
 
 class CatalogTypeMenu(containerId: Int, inventory: Inventory, system: TaskTussleSystem) : ActionHopperMenu(containerId, inventory) {
@@ -15,7 +16,10 @@ class CatalogTypeMenu(containerId: Int, inventory: Inventory, system: TaskTussle
 		managers.forEachIndexed { index, manager ->
 			val catalog = requireNotNull(manager.files)
 			val slot = if (managers.size == 2) 1 + index * 2 else index
-			button(slot, named(manager.icon, catalog.browserName, ChatFormatting.AQUA)) { player, _ -> system.menus.openCatalogFiles(player, catalog) }
+			val icon = named(manager.icon, catalog.browserName, ChatFormatting.AQUA).apply {
+				manager.iconModel?.let { set(DataComponents.ITEM_MODEL, it) }
+			}
+			button(slot, icon) { player, _ -> system.menus.openCatalogFiles(player, catalog) }
 		}
 	}
 }

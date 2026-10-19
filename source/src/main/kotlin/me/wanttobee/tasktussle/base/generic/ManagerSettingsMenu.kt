@@ -4,6 +4,7 @@ import kotlin.math.max
 import me.wanttobee.tasktussle.TaskTussleSystem
 import me.wanttobee.tasktussle.base.tasks.ITaskFiles
 import net.minecraft.ChatFormatting
+import net.minecraft.core.component.DataComponents
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.item.Item
@@ -19,7 +20,10 @@ abstract class ManagerSettingsMenu(
 	protected fun refresh() {
 		clear(); fill()
 		for (slot in 9 until 18) display(slot, emptySetting())
-		button(4, named(manager.settingsIcon, manager.name, color, listOf("Click: Go back"), enchanted = true)) { player, _ -> system.menus.openSettings(player) }
+		val header = named(manager.settingsIcon, manager.name, color, listOf("Click: Go back"), enchanted = true).apply {
+			if (manager.settingsIcon == manager.icon) manager.iconModel?.let { set(DataComponents.ITEM_MODEL, it) }
+		}
+		button(4, header) { player, _ -> system.menus.openSettings(player) }
 		populateSettings()
 		broadcastChanges()
 	}

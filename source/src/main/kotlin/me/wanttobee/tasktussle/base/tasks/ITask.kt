@@ -20,5 +20,6 @@ abstract class ITask(val template: TaskTemplate) {
 	open fun completedDescription(server: MinecraftServer?): String? = null
 	open fun poll(player: ServerPlayer, settings: TaskTussleSettings): Boolean = false
 	open fun click(player: ServerPlayer, settings: TaskTussleSettings): Boolean = false
+	open fun onEvent(event: TaskEvent, settings: TaskTussleSettings): Boolean = false
 	open fun acceptsDelivery(item: Item): Boolean = false
 }

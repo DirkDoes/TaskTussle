@@ -3,12 +3,10 @@ package me.wanttobee.tasktussle.base.tasks
 import me.wanttobee.tasktussle.base.games.ITTGameTeam
 import me.wanttobee.tasktussle.base.generic.IManager
 import me.wanttobee.tasktussle.base.generic.TaskTussleSettings
-import net.minecraft.resources.Identifier
 import net.minecraft.server.MinecraftServer
 
 interface ITaskManager : IManager {
 	val kind: TaskKind
-	val iconModel: Identifier? get() = null
 	override val key: String get() = kind.id
 	val files: ITaskFiles? get() = null
 	fun weight(settings: TaskTussleSettings): Int

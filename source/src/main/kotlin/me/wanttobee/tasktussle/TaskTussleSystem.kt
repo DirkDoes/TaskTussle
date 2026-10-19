@@ -10,6 +10,7 @@ import me.wanttobee.tasktussle.base.generic.TaskMenus
 import me.wanttobee.tasktussle.base.generic.TaskTussleSettings
 import me.wanttobee.tasktussle.base.tasks.ITask
 import me.wanttobee.tasktussle.base.tasks.TaskCatalog
+import me.wanttobee.tasktussle.base.tasks.TaskEvent
 import me.wanttobee.tasktussle.base.tasks.TaskFactory
 import me.wanttobee.tasktussle.base.tasks.TaskOptionsMenu
 import me.wanttobee.tasktussle.base.tasks.deliveryTask
@@ -192,6 +193,18 @@ class TaskTussleSystem(
 		stack.shrink(1)
 		player.inventory.setChanged()
 		complete(player.level().server, active, team, task, player)
+	}
+
+	fun onTaskEvent(player: ServerPlayer, event: TaskEvent) {
+		val active = game ?: return
+		if (active.paused || active.finished) return
+		val team = active.teams.find { player.uuid in it.members } ?: return
+		for (task in team.tasks) {
+			if (active.paused || active.finished) break
+			if (!task.completed && !task.failed && task.onEvent(event, settings)) {
+				complete(player.level().server, active, team, task, player)
+			}
+		}
 	}
 
 	fun debugStatus(player: ServerPlayer) {
