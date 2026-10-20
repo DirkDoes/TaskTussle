@@ -37,6 +37,10 @@ The PvP setting between team selection and game time controls damage across team
 
 The compass opens **Task Tussle Settings Preview**; `/tt settings` opens the editable menu. `/tt worldsetup start` sets time to 0 and freezes it, and `/tt worldsetup clear` resumes time.
 
+The Bingo UI proof of concept uses `bingo_card_big.png` in a six-row inventory, with the 5×5 card starting on row two, six team selectors on each side, and the viewed team's concrete block at the top center. Bingo supports up to 12 teams and displays no text title. The earlier `bingo_card1.png` and `bingo_card2.png` textures remain unused. Game managers still choose their card menu from the current game and viewer, so other layouts can depend on game state.
+
+The resource pack makes Minecraft's shared chest background transparent. When the pack is active, the server adds the matching one-to-six-row background to ordinary chest-menu titles, including settings, renamed chests, barrels, ender chests, and chest vehicles. Original names and translations are preserved. Custom `ActionChestMenu` implementations opt out with `customBackground`; Bingo supplies its own title texture. The language files only hide the Inventory label, as in DMC. Without the pack, menus retain Minecraft's normal background.
+
 In opt-in/out mode, names above players and in the player list show an iron sword for opted-in players or the resource pack's `peacefull.png` for opted-out players. Icons update with each choice, remain during the game, and disappear in the other PvP modes.
 
 ## Repository layout

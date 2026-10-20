@@ -14,15 +14,16 @@ import me.wanttobee.tasktussle.teams.emptyTeamSlot
 import me.wanttobee.tasktussle.teams.teamItem
 import net.minecraft.world.entity.player.Inventory
 
-class BingoCardGui(
+internal class BingoCardGui(
 	containerId: Int,
 	inventory: Inventory,
 	private val system: TaskTussleSystem,
 	private val game: ITTGame,
 	private val team: ITTGameTeam,
 	private val viewersTeam: ITTGameTeam?,
-) : ActionChestMenu(containerId, inventory, 5), ITTCardGui {
-	private val layout = BingoCardLayout(game.teams.size)
+	private val layout: BingoCardLayout,
+) : ActionChestMenu(containerId, inventory, layout.rows), ITTCardGui {
+	override val customBackground = true
 	init { refresh() }
 
 	override fun refresh() {
@@ -31,6 +32,7 @@ class BingoCardGui(
 			fill()
 			layout.teamSlots.forEach { display(it, emptyTeamSlot()) }
 		}
+		display(layout.viewedTeamSlot, named(teamItem(team.index, true), team.displayName(), team.color))
 		team.tasks.forEachIndexed { index, task ->
 			val slot = layout.taskSlots[index]
 			val stack = taskStack(system, task)

@@ -38,6 +38,7 @@ abstract class ActionChestMenu(
 	rows: Int,
 	protected val contents: SimpleContainer = SimpleContainer(rows * 9),
 ) : ChestMenu(menuType(rows), containerId, playerInventory, contents, rows) {
+	open val customBackground: Boolean get() = false
 	private val actions = mutableMapOf<Int, (ServerPlayer, Click) -> Unit>()
 	private val menuSlots = rows * 9
 

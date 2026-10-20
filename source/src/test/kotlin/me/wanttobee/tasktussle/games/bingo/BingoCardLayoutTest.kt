@@ -14,41 +14,38 @@ import net.minecraft.resources.Identifier
 
 class BingoCardLayoutTest {
 	@Test
-	fun bothLayoutsFitEveryTaskAndTeamWithoutOverlapping() {
-		for (count in 1..15) {
-			val layout = BingoCardLayout(count)
-			assertEquals(25, layout.taskSlots.toSet().size)
-			assertEquals(if (count <= 10) 10 else 15, layout.teamSlots.toSet().size)
-			assertTrue(layout.teamSlots.size >= count)
-			assertTrue((layout.taskSlots + layout.teamSlots).all { it in 0..44 })
-			assertTrue(layout.taskSlots.intersect(layout.teamSlots.toSet()).isEmpty())
-			assertEquals("Bingo", layout.title(false).string)
-		}
-		assertEquals(listOf(0, 9, 18, 27, 36, 8, 17, 26, 35, 44), BingoCardLayout(10).teamSlots)
-		assertEquals(listOf(6, 7, 8, 15, 16, 17, 24, 25, 26, 33, 34, 35, 42, 43, 44), BingoCardLayout(11).teamSlots)
-		assertEquals(listOf(2, 3, 4, 5, 6), BingoCardLayout(10).taskSlots.take(5))
-		assertEquals(listOf(0, 1, 2, 3, 4), BingoCardLayout(11).taskSlots.take(5))
+	fun sixRowsFitTheCardTwelveTeamsAndTheViewedTeamWithoutOverlapping() {
+		val layout = BingoCardLayout()
+		assertEquals(6, layout.rows)
+		assertEquals(1..12, BingoManager.teamRange)
+		assertEquals(25, layout.taskSlots.toSet().size)
+		assertEquals(listOf(0, 9, 18, 27, 36, 45, 8, 17, 26, 35, 44, 53), layout.teamSlots)
+		assertEquals(listOf(11, 12, 13, 14, 15), layout.taskSlots.take(5))
+		assertEquals(listOf(47, 48, 49, 50, 51), layout.taskSlots.takeLast(5))
+		assertEquals(4, layout.viewedTeamSlot)
+		val occupied = layout.taskSlots + layout.teamSlots + layout.viewedTeamSlot
+		assertEquals(occupied.size, occupied.toSet().size)
+		assertTrue(occupied.all { it in 0 until layout.rows * 9 })
+		assertEquals("", layout.title(false).string)
 	}
 
 	@Test
-	fun titlesSelectTheMatchingTextureAtItsOriginalPixelSize() {
+	fun titleUsesOnlyTheBigTextureAtItsOriginalPixelSize() {
 		val pack = Path.of("..", "resourcepack", "assets", "tasktussle")
 		val providers = JsonParser.parseString(Files.readString(pack.resolve("font/bingo_card.json"))).asJsonObject.getAsJsonArray("providers")
 		assertEquals(-8, providers[0].asJsonObject.getAsJsonObject("advances").get("\uF800").asInt)
-		assertEquals(-169, providers[0].asJsonObject.getAsJsonObject("advances").get("\uF803").asInt)
-		for ((count, texture) in listOf(10 to 1, 11 to 2, 15 to 2)) {
-			val title = BingoCardLayout(count).title(true)
-			val background = title.siblings.first()
-			val provider = providers[texture].asJsonObject
-			assertEquals(FontDescription.Resource(Identifier.parse("tasktussle:bingo_card")), background.style.font)
-			assertEquals(0xFFFFFF, background.style.color?.value)
-			assertEquals("\uF800" + provider.getAsJsonArray("chars")[0].asString + "\uF803Bingo", title.string)
-			assertEquals("tasktussle:gui/bingo_card$texture.png", provider.get("file").asString)
-			val definition = BitmapProvider.Definition.CODEC.codec().parse(JsonOps.INSTANCE, provider).orThrow
-			val image = ImageIO.read(pack.resolve("textures/gui/bingo_card$texture.png").toFile())
-			assertEquals(256, image.width)
-			assertEquals(image.height, definition.height())
-			assertEquals(13, definition.ascent())
-		}
+		assertEquals(2, providers.size())
+		val title = BingoCardLayout().title(true)
+		val provider = providers[1].asJsonObject
+		assertEquals(FontDescription.Resource(Identifier.parse("tasktussle:bingo_card")), title.style.font)
+		assertEquals(0xFFFFFF, title.style.color?.value)
+		assertEquals("\uF800" + provider.getAsJsonArray("chars")[0].asString, title.string)
+		assertEquals("tasktussle:gui/bingo_card_big.png", provider.get("file").asString)
+		val definition = BitmapProvider.Definition.CODEC.codec().parse(JsonOps.INSTANCE, provider).orThrow
+		val image = ImageIO.read(pack.resolve("textures/gui/bingo_card_big.png").toFile())
+		assertEquals(256, image.width)
+		assertEquals(image.height, definition.height())
+		assertEquals(13, definition.ascent())
+		assertEquals(0, image.getRGB(35, 20) ushr 24)
 	}
 }

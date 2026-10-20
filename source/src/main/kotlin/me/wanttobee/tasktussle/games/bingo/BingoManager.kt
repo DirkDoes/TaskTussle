@@ -18,7 +18,7 @@ object BingoManager : ITTGameManager {
 	override val key = "bingo"
 	override val name = "Bingo"
 	override val icon get() = Items.FILLED_MAP
-	override val teamRange = 1..15
+	override val teamRange = 1..12
 
 	override fun create(teams: List<Team>, settings: TaskTussleSettings, factory: TaskFactory): BingoGame? {
 		val mutual = factory.generate(settings.mutualTasks, settings) ?: return null
@@ -39,10 +39,13 @@ object BingoManager : ITTGameManager {
 		return BingoGame(gameTeams, settings.gameMinutes * 60)
 	}
 
-	override fun cardMenu(system: TaskTussleSystem, game: ITTGame, team: ITTGameTeam, viewer: ITTGameTeam?) = SimpleMenuProvider(
-		{ id, inventory, _ -> BingoCardGui(id, inventory, system, game, team, viewer) },
-		BingoCardLayout(game.teams.size).title(TaskTussleResourcePackServer.active),
-	)
+	override fun cardMenu(system: TaskTussleSystem, game: ITTGame, team: ITTGameTeam, viewer: ITTGameTeam?): SimpleMenuProvider {
+		val layout = BingoCardLayout()
+		return SimpleMenuProvider(
+			{ id, inventory, _ -> BingoCardGui(id, inventory, system, game, team, viewer, layout) },
+			layout.title(TaskTussleResourcePackServer.active),
+		)
+	}
 
 	override fun hasWon(team: ITTGameTeam, settings: TaskTussleSettings) = team.card.hasWon(settings.winningCondition)
 
