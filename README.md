@@ -1,78 +1,67 @@
 # TaskTussle
 
-TaskTussle is a server-side Fabric mod for Minecraft 26.2 that runs team bingo games with block, advancement, and manual click tasks.
+TaskTussle is a server-side Fabric mod for Minecraft 26.2. Games share a generic task system, so new games and task types can be added independently. Players only need the server's resource pack; no client mod is required.
 
-Players do not need a client mod. TaskTussle serves its required resource pack from the server for its custom card, sounds, particles, and interface textures.
+## Games
 
-## Requirements
-
-- Minecraft 26.2
-- Java 25
-- Fabric Loader 0.19.3 or newer
-- Fabric API
-- Fabric Language Kotlin
-
-## Build
-
-From the `source` directory:
-
-```shell
-./gradlew build
-```
-
-On Windows, use `gradlew.bat build`. The mod JAR is written to `source/build/libs/`.
-
-## Install
-
-1. Put the TaskTussle JAR, Fabric API, and Fabric Language Kotlin in the dedicated server's `mods` directory.
-2. Package the contents of `resourcepack/` as `tasktussle-resource-pack.zip` in the server directory.
-3. Start the server once to generate `config/tasktussle/tasktussle.json`.
-4. Set `resource_pack_url` to the externally reachable HTTP URL for the pack. TaskTussle hosts the ZIP itself on the URL's configured port.
-
-The default task catalogs are copied to `config/tasktussle/` on first start. The balanced block and advancement catalogs are the recommended alternatives.
-
-Use `/tt help` in game for commands.
-
-The PvP setting between team selection and game time controls damage across teams: on, opt-in/out, or off. Teammates can always damage each other. In opt-in/out mode, players start opted in and can toggle the sword/peace icon beside their settings compass. This hotbar toggle remains available during team selection. The Teams item occupies the center hotbar slot, and the starter's detonator sits in the far-right slot. The PvP-off setting also uses the peace icon. Choices lock and the toggle disappears when a game starts; both players must be opted in for cross-team melee or player-fired projectile damage. Environmental damage such as lava is unchanged.
-
-The compass opens **Task Tussle Settings Preview**; `/tt settings` opens the editable menu. `/tt worldsetup start` sets time to 0 and freezes it, and `/tt worldsetup clear` resumes time.
-
-The Bingo UI proof of concept uses `bingo_card_big.png` in a six-row inventory, with the 5×5 card starting on row two, six team selectors on each side, and the viewed team's concrete block at the top center. Bingo supports up to 12 teams and displays no text title. The earlier `bingo_card1.png` and `bingo_card2.png` textures remain unused. Game managers still choose their card menu from the current game and viewer, so other layouts can depend on game state.
-
-The resource pack makes Minecraft's shared chest background transparent. When the pack is active, the server adds the matching one-to-six-row background to ordinary chest-menu titles, including settings, renamed chests, barrels, ender chests, and chest vehicles. Original names and translations are preserved. Custom `ActionChestMenu` implementations opt out with `customBackground`; Bingo supplies its own title texture. The language files only hide the Inventory label, as in DMC. Without the pack, menus retain Minecraft's normal background.
-
-In opt-in/out mode, names above players and in the player list show an iron sword for opted-in players or the resource pack's `peacefull.png` for opted-out players. Icons update with each choice, remain during the game, and disappear in the other PvP modes.
-
-## Repository layout
-
-- `source/` — Kotlin source, tests, Gradle wrapper, and Fabric metadata
-- `resourcepack/` — deployable resource-pack source
-- `assets/` — original editable image and audio assets
-
-### Code structure
-
-The Fabric implementation follows the extension boundaries of TaskTussleLegacy. The implementation and game rules remain those of the Fabric version; Bukkit APIs and obsolete legacy task states are not carried over.
-
-Packages under `source/src/main/kotlin/me/wanttobee/tasktussle/`:
-
-| Package | Responsibility |
+| Game | Summary |
 | --- | --- |
-| Root | `TaskTussleMod` wires Fabric events, `TaskTussleSystem` coordinates the running game, and `TaskTussleGrouper` registers implementations. |
-| `base/games` | `ITTGame`, `ITTGameManager`, `ITTGameTeam`, `ITTCardLogic`, and `ITTCardGui` define the game and card contracts. |
-| `base/tasks` | `ITask`, `ITaskManager`, and `ITaskFiles`, plus task generation, catalog storage, task icons, and catalog menus. |
-| `base/generic` | Shared manager contracts, settings, menu navigation, and interactive container base classes. |
-| `games/bingo` | Bingo's card, team, game, generation rules, win conditions, and settings. |
-| `tasks/obtainTask`, `tasks/achievementTask`, `tasks/clickTask` | Each task type's checks, presentation, manager, and settings; file-backed types also supply their catalog content. |
-| `teams` | Team membership, manual selection, and team icons. |
-| `pvp` | Cross-team damage rules and players' pre-game opt-in/out choices. |
-| `commands`, `items`, `world`, `sounds`, `resourcepack`, `config`, `util`, `mixin` | Fabric integration and supporting services. |
+| Bingo | Complete tasks on a 5×5 card to meet the chosen win condition. Supports 1–12 teams. |
+| More games | Planned, using the same task system. |
 
-To add a task type, extend `ITask`, implement `ITaskManager`, and register its manager in `TaskTussleGrouper.taskManagers`. Each generated task is a fresh instance, even when teams share the same template. Implement `ITaskFiles` for a file-backed task type, or supply a repeatable template for a task such as Click. Managers supply their own weight/settings accessors and settings menu; the shared generator, completion loop, and catalog browser dispatch through those contracts.
+## Tasks
 
-To add a game, implement `ITTGameManager`, `ITTGame`, and the card/team contracts, then register the manager in `TaskTussleGrouper.gameManagers`. The manager creates its game, supplies its card menu, and decides wins and overtime results. Start commands and the settings picker use the registry. Common timing, completion notifications, inventory tools, and lifecycle handling stay in `TaskTussleSystem` and its supporting services.
+| Task | Summary |
+| --- | --- |
+| Obtain | Collect the requested block, or hand it in when delivery mode is enabled. |
+| Advancement | Earn the requested Minecraft advancement. |
+| Click | Click the task on your card to complete it. |
+| Trade | Complete a trade that buys or sells the requested item. Any merchant counts, including wandering traders. |
 
-The current settings screen reserves nine task-type slots and nine game-mode slots; the catalog type picker has five slots. A larger registry will also need a larger or paginated picker.
+## Other features
 
-Tests mirror the production packages under `source/src/test/kotlin`. Run `gradlew.bat test` or `gradlew.bat build` from `source` with Java 25. The focused suite covers task generation, win rules, item presentation and delivery, live settings views, catalog editing, and resource-pack assets and configuration. Multiplayer behavior still requires an in-game play-test.
+- Random or player-selected teams, with shared task progress.
+- Editable task catalogs, difficulty ratios, game timers, and card visibility settings.
+- Cross-team PvP modes: on, off, or mutual opt-in. Teammate PvP stays enabled.
+- Custom menus, task displays, sounds, and an optional lobby with parkour.
 
-Local Minecraft server directories are intentionally excluded from Git because they contain generated files and private player/server data.
+## Server setup
+
+1. Set up a Minecraft **26.2** server with **Java 25** and **Fabric Loader 0.19.3+**.
+2. Put the **TaskTussle**, **Fabric API**, and **Fabric Language Kotlin** JARs in the server's `mods/` folder. Use dependency versions compatible with Minecraft 26.2.
+3. Zip the contents of `resourcepack/` as **`tasktussle-resource-pack.zip`**, with `pack.mcmeta` and `assets/` directly inside the ZIP. Place it in the server's root folder.
+4. Start and stop the server once. In `config/tasktussle/tasktussle.json`, keep `resource_pack_enabled` set to `true` and set `resource_pack_url` to `http://YOUR_SERVER_ADDRESS:25566/tasktussle-resource-pack.zip`. Allow TCP port **25566** through your firewall/router so players can download it. The default `127.0.0.1` address is for testing on the same computer.
+5. Restart the server. TaskTussle hosts and sends the pack automatically. As an operator, use `/tt settings`, then `/tt start bingo 2` to start a two-team game.
+
+Task catalogs are generated in `config/tasktussle/` and can be managed through the in-game Task Browser.
+
+To build the mod yourself, run `.\gradlew.bat build` from `source/` (`./gradlew build` on Linux/macOS). The server mod is `source/build/libs/tasktussle-<version>.jar`.
+
+## Commands
+
+All commands require operator permissions except `/card` and `/display`. `/tt` also accepts `/taskTussle` and `/tasktussle`. Arguments in `<brackets>` are required.
+
+| Command | Purpose |
+| --- | --- |
+| `/tt help` | Show game and settings commands. |
+| `/tt settings` | Open editable game settings. |
+| `/tt start bingo <teams>` | Start Bingo with 1–12 teams. |
+| `/tt stop` | Stop and clear the current game. |
+| `/tt finish draw` | End the game as a draw. |
+| `/tt finish out_of_time` | End the game using its time-limit rules. |
+| `/card` | Open your team's card. |
+| `/display` | Show the item you are holding in the task display. |
+| `/teams help` | Show team commands. |
+| `/teams list` | List current teams. |
+| `/teams generateTeams <amount>` | Create random teams. |
+| `/teams teamMaker <amount>` | Start manual team selection. |
+| `/teams clearAll` | Clear teams and stop any running game. |
+| `/tt worldsetup help` | Show lobby commands. |
+| `/tt worldsetup start` | Enable the lobby and freeze world time at dawn. |
+| `/tt worldsetup clear` | Clear the lobby and resume world time. |
+| `/tt worldsetup create_parkour` | Add lobby parkour. |
+| `/tt worldsetup remove_parkour` | Remove lobby parkour. |
+| `/tt debug status` | Show current game status. |
+| `/tt debug log` | Toggle console logging. |
+| `/debug_tt help` | Show diagnostic commands. |
+| `/debug_tt <topic>` | Inspect `task_events`, `hotbar_items`, `interactive_inventories`, `teams`, or `timers`. |
