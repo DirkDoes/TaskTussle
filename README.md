@@ -17,6 +17,9 @@ TaskTussle is a server-side Fabric mod for Minecraft 26.2. Games share a generic
 | Advancement | Earn the requested Minecraft advancement. |
 | Click | Click the task on your card to complete it. |
 | Trade | Complete a trade that buys or sells the requested item. Any merchant counts, including wandering traders. |
+| Status effect | Receive the requested effect, at any strength or duration. Effects already active when the game starts count. |
+
+Status-effect tasks include all 40 vanilla effects, with estimated tiers in `status_effects_default.yml` (12 easy, 17 medium, 11 hard). Hard includes command-only effects: Health Boost, Luck, Saturation, and Unluck. Remove these in the task-file editor for survival-only games. Effect icons are extracted from the matching client JAR with `source/tools/extract-status-effect-icons.py`.
 
 ## Other features
 

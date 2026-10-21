@@ -1,0 +1,46 @@
+# All vanilla status effects, ranked by estimated survival effort.
+# Hard includes command-only effects: health_boost, luck, saturation, unluck.
+# Remove those entries in the task editor for survival-only games.
+easy:
+  - minecraft:absorption
+  - minecraft:blindness
+  - minecraft:dolphins_grace
+  - minecraft:hunger
+  - minecraft:instant_health
+  - minecraft:jump_boost
+  - minecraft:nausea
+  - minecraft:night_vision
+  - minecraft:poison
+  - minecraft:regeneration
+  - minecraft:speed
+  - minecraft:weakness
+medium:
+  - minecraft:bad_omen
+  - minecraft:breath_of_the_nautilus
+  - minecraft:fire_resistance
+  - minecraft:glowing
+  - minecraft:infested
+  - minecraft:instant_damage
+  - minecraft:invisibility
+  - minecraft:oozing
+  - minecraft:raid_omen
+  - minecraft:resistance
+  - minecraft:slow_falling
+  - minecraft:slowness
+  - minecraft:strength
+  - minecraft:trial_omen
+  - minecraft:water_breathing
+  - minecraft:weaving
+  - minecraft:wind_charged
+hard:
+  - minecraft:conduit_power
+  - minecraft:darkness
+  - minecraft:haste
+  - minecraft:health_boost
+  - minecraft:hero_of_the_village
+  - minecraft:levitation
+  - minecraft:luck
+  - minecraft:mining_fatigue
+  - minecraft:saturation
+  - minecraft:unluck
+  - minecraft:wither

@@ -16,6 +16,7 @@ import me.wanttobee.tasktussle.base.tasks.deliveryTask
 import me.wanttobee.tasktussle.items.ForcedItems
 import me.wanttobee.tasktussle.pvp.PvpSystem
 import me.wanttobee.tasktussle.sounds.TaskTussleSounds
+import me.wanttobee.tasktussle.tasks.statusEffectTask.StatusEffectEvent
 import me.wanttobee.tasktussle.teams.Team
 import me.wanttobee.tasktussle.teams.TeamMakerMenu
 import me.wanttobee.tasktussle.teams.TeamSystem
@@ -27,6 +28,7 @@ import me.wanttobee.tasktussle.util.takeDue
 import me.wanttobee.tasktussle.util.titleFrames
 import net.minecraft.ChatFormatting
 import net.minecraft.core.component.DataComponents
+import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket
@@ -107,6 +109,7 @@ class TaskTussleSystem(
 		}
 		if (settings.gameMinutes > 0) timer.createTimerBar(server, created)
 		log("created ${teams.size} ${manager.name} teams")
+		server.playerList.players.forEach(::checkCurrentEffects)
 		return true
 	}
 
@@ -211,6 +214,13 @@ class TaskTussleSystem(
 		}
 		if (teams.selection != null) items.giveTeamNavigator(player)
 		if (teams.selection?.starter == player.uuid) items.giveTeamFinisher(player)
+		checkCurrentEffects(player)
+	}
+
+	private fun checkCurrentEffects(player: ServerPlayer) {
+		for (effect in player.activeEffects.toList()) {
+			onTaskEvent(player, StatusEffectEvent(requireNotNull(BuiltInRegistries.MOB_EFFECT.getKey(effect.effect.value()))))
+		}
 	}
 
 	fun shutdown(server: MinecraftServer) {

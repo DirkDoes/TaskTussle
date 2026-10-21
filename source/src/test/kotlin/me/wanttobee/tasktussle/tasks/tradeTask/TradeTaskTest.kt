@@ -121,6 +121,9 @@ class TradeTaskTest {
 			assertEquals(overlayModel, cardIcon.get(DataComponents.ITEM_MODEL))
 			assertEquals(BuiltInRegistries.ITEM.getValue(template.id), cardIcon.item)
 			assertEquals(listOf(template.id.toString(), "trade_task_overlay"), cardIcon.get(DataComponents.CUSTOM_MODEL_DATA)?.strings)
+			val editorIcon = TradeTaskFiles.icon(null, settings, template.id)
+			assertEquals(cardIcon.get(DataComponents.ITEM_MODEL), editorIcon.get(DataComponents.ITEM_MODEL))
+			assertEquals(cardIcon.get(DataComponents.CUSTOM_MODEL_DATA), editorIcon.get(DataComponents.CUSTOM_MODEL_DATA))
 			assertEquals(ItemStack(BuiltInRegistries.ITEM.getValue(template.id)).hoverName.string, cardIcon.get(DataComponents.CUSTOM_NAME)?.string)
 			task.completed = true
 			assertEquals(Identifier.parse("tasktussle:task_complete"), taskStack(system, task).get(DataComponents.ITEM_MODEL))

@@ -9,10 +9,12 @@ import me.wanttobee.tasktussle.base.tasks.ITaskFiles
 import me.wanttobee.tasktussle.base.tasks.TaskPools
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.core.registries.Registries
+import net.minecraft.core.component.DataComponents
 import net.minecraft.resources.Identifier
 import net.minecraft.server.MinecraftServer
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
+import net.minecraft.world.item.component.CustomModelData
 import net.minecraft.world.item.trading.VillagerTrade
 
 object TradeTaskFiles : ITaskFiles {
@@ -26,7 +28,11 @@ object TradeTaskFiles : ITaskFiles {
 	override fun accepts(server: MinecraftServer, id: Identifier) = BuiltInRegistries.ITEM.containsKey(id) && BuiltInRegistries.ITEM.getValue(id) != Items.AIR
 	override fun available(server: MinecraftServer) = itemLevels(server).keys.asSequence()
 	override fun name(server: MinecraftServer?, id: Identifier) = ItemStack(BuiltInRegistries.ITEM.getValue(id)).hoverName.string
-	override fun icon(server: MinecraftServer?, settings: TaskTussleSettings, id: Identifier) = ItemStack(BuiltInRegistries.ITEM.getValue(id))
+	override fun icon(server: MinecraftServer?, settings: TaskTussleSettings, id: Identifier) = ItemStack(BuiltInRegistries.ITEM.getValue(id)).apply {
+		set(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath("tasktussle", "item_overlay"))
+		set(DataComponents.CUSTOM_MODEL_DATA, CustomModelData(emptyList(), emptyList(), listOf(id.toString(), "trade_task_overlay"), emptyList()))
+		remove(DataComponents.ATTRIBUTE_MODIFIERS)
+	}
 	override fun description(server: MinecraftServer?, id: Identifier) = "Buy or sell this item in any completed trade"
 
 	override fun generated(server: MinecraftServer) = poolsForLevels(itemLevels(server))
