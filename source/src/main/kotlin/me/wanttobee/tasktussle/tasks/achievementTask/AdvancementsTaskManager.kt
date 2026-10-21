@@ -7,6 +7,7 @@ import me.wanttobee.tasktussle.base.tasks.ITaskManager
 import me.wanttobee.tasktussle.base.tasks.TaskKind
 import me.wanttobee.tasktussle.base.tasks.TaskTemplate
 import net.minecraft.server.MinecraftServer
+import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.item.Items
 import net.minecraft.world.level.gamerules.GameRules
@@ -15,6 +16,7 @@ object AdvancementsTaskManager : ITaskManager {
 	override val kind = TaskKind.ADVANCEMENT
 	override val name = "Advancements Task"
 	override val icon get() = Items.KNOWLEDGE_BOOK
+	override val iconModel = Identifier.fromNamespaceAndPath("tasktussle", "advancement_settings")
 	override val files = AdvancementsFiles
 	override fun weight(settings: TaskTussleSettings) = settings.advancementWeight
 	override fun setWeight(settings: TaskTussleSettings, value: Int) { settings.advancementWeight = value }

@@ -1,0 +1,185 @@
+{
+  "model": {
+    "type": "minecraft:composite",
+    "models": [
+      {
+        "type": "minecraft:select",
+        "property": "minecraft:display_context",
+        "cases": [
+          {
+            "when": [
+              "firstperson_righthand",
+              "firstperson_lefthand",
+              "thirdperson_righthand",
+              "thirdperson_lefthand"
+            ],
+            "model": {
+              "type": "minecraft:model",
+              "model": "tasktussle:item/advancement_task"
+            }
+          },
+          {
+            "when": "fixed",
+            "model": {
+              "type": "minecraft:composite",
+              "models": [
+                {
+                  "type": "minecraft:model",
+                  "model": "tasktussle:item/advancement_task"
+                }
+              ],
+              "transformation": {
+                "translation": [
+                  0,
+                  0,
+                  -0.5
+                ],
+                "left_rotation": [
+                  0,
+                  0,
+                  0,
+                  1
+                ],
+                "scale": [
+                  1,
+                  1,
+                  2
+                ],
+                "right_rotation": [
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            }
+          }
+        ],
+        "fallback": {
+          "type": "minecraft:model",
+          "model": "tasktussle:item/advancement_task"
+        }
+      },
+      {
+        "type": "minecraft:select",
+        "property": "minecraft:display_context",
+        "cases": [
+          {
+            "when": [
+              "firstperson_righthand",
+              "firstperson_lefthand",
+              "thirdperson_righthand",
+              "thirdperson_lefthand"
+            ],
+            "model": {
+              "type": "minecraft:composite",
+              "models": [
+                {
+                  "type": "minecraft:composite",
+                  "models": [
+                    {
+                      "type": "minecraft:model",
+                      "model": "minecraft:item/knowledge_book"
+                    }
+                  ]
+                }
+              ],
+              "transformation": {
+                "translation": [
+                  0.125,
+                  0.125,
+                  0.0625
+                ],
+                "left_rotation": [
+                  0,
+                  0,
+                  0,
+                  1
+                ],
+                "scale": [
+                  0.75,
+                  0.75,
+                  0.75
+                ],
+                "right_rotation": [
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              }
+            }
+          },
+          {
+            "when": "fixed",
+            "model": {
+              "type": "minecraft:composite",
+              "models": [
+                {
+                  "type": "minecraft:model",
+                  "model": "minecraft:item/knowledge_book"
+                }
+              ],
+              "transformation": [
+                0.75,
+                0.0,
+                0.0,
+                0.125,
+                0.0,
+                0.75,
+                0.0,
+                0.125,
+                0.0,
+                0.0,
+                0.75,
+                0.21875,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          }
+        ],
+        "fallback": {
+          "type": "minecraft:composite",
+          "models": [
+            {
+              "type": "minecraft:composite",
+              "models": [
+                {
+                  "type": "minecraft:model",
+                  "model": "minecraft:item/knowledge_book"
+                }
+              ]
+            }
+          ],
+          "transformation": {
+            "translation": [
+              0.125,
+              0.125,
+              1
+            ],
+            "left_rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              0.75,
+              0.75,
+              0.75
+            ],
+            "right_rotation": [
+              0,
+              0,
+              0,
+              1
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

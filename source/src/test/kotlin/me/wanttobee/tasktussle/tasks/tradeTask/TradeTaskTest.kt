@@ -113,11 +113,14 @@ class TradeTaskTest {
 		assertEquals(25, templates.map { it.id }.toSet().size)
 		val system = TaskTussleSystem()
 		val tradeModel = Identifier.parse("tasktussle:trade_task")
+		val overlayModel = Identifier.parse("tasktussle:item_overlay")
 		for (template in templates) {
 			val task = assertIs<TradeTask>(factory.create(template))
-			assertEquals(tradeModel, task.icon(null, settings).get(DataComponents.ITEM_MODEL))
+			assertEquals(overlayModel, task.icon(null, settings).get(DataComponents.ITEM_MODEL))
 			val cardIcon = taskStack(system, task)
-			assertEquals(tradeModel, cardIcon.get(DataComponents.ITEM_MODEL))
+			assertEquals(overlayModel, cardIcon.get(DataComponents.ITEM_MODEL))
+			assertEquals(BuiltInRegistries.ITEM.getValue(template.id), cardIcon.item)
+			assertEquals(listOf(template.id.toString(), "trade_task_overlay"), cardIcon.get(DataComponents.CUSTOM_MODEL_DATA)?.strings)
 			assertEquals(ItemStack(BuiltInRegistries.ITEM.getValue(template.id)).hoverName.string, cardIcon.get(DataComponents.CUSTOM_NAME)?.string)
 			task.completed = true
 			assertEquals(Identifier.parse("tasktussle:task_complete"), taskStack(system, task).get(DataComponents.ITEM_MODEL))

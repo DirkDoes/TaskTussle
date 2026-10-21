@@ -32,6 +32,10 @@ class SettingsMenuTest {
 		system.settings.handInItems = true
 		viewers.forEach { menu ->
 			menu.broadcastChanges()
+			assertEquals(Items.KNOWLEDGE_BOOK, menu.getSlot(19).item.item)
+			assertEquals(Identifier.parse("tasktussle:advancement_settings"), menu.getSlot(19).item.get(DataComponents.ITEM_MODEL))
+			assertEquals(Items.EMERALD, menu.getSlot(21).item.item)
+			assertEquals(Identifier.parse("tasktussle:trade_task"), menu.getSlot(21).item.get(DataComponents.ITEM_MODEL))
 			assertEquals("Hard Ratio: 9", menu.getSlot(3).item.get(DataComponents.CUSTOM_NAME)?.string)
 			assertEquals(9, menu.getSlot(3).item.count)
 			assertEquals("Obtain Task Ratio: 7", menu.getSlot(18).item.get(DataComponents.CUSTOM_NAME)?.string)

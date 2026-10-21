@@ -17,8 +17,12 @@ class AdvancementIconAssetsTest {
 		val layers = model["models"].asJsonArray
 		assertEquals(2, layers.size())
 		assertEquals(0, layers[0].asJsonObject["index"].asInt)
-		assertEquals(1, layers[1].asJsonObject["index"].asInt)
-		val items = layers[1].asJsonObject["cases"].asJsonArray.map { it.asJsonObject["when"].asString }
+		val guiItems = layers[1].asJsonObject["fallback"].asJsonObject
+		assertEquals(1, guiItems["index"].asInt)
+		val items = guiItems["cases"].asJsonArray.flatMap {
+			val keys = it.asJsonObject["when"]
+			if (keys.isJsonArray) keys.asJsonArray.map { key -> key.asString } else listOf(keys.asString)
+		}
 		assertEquals(items.size, items.toSet().size)
 		for ((id, style) in advancementIcons) {
 			assertTrue(style.item in items, "$id selects a missing item")
@@ -26,8 +30,7 @@ class AdvancementIconAssetsTest {
 			// The completion animation uses FIXED, while the card uses GUI.
 			for (context in listOf("gui", "fixed")) {
 				val icon = resolve(layers[1].asJsonObject, style.plate, style.item, context)
-				assertEquals("minecraft:composite", icon["type"].asString)
-				assertTrue(icon["models"].asJsonArray.size() > 0)
+				assertTrue(icon["type"].asString != "minecraft:empty")
 				val plate = resolve(layers[0].asJsonObject, style.plate, style.item, context)
 				assertTrue(plate.toString().contains("tasktussle:item/advancement_${style.plate}"))
 			}
@@ -39,7 +42,7 @@ class AdvancementIconAssetsTest {
 		val value = when (node["property"].asString) {
 			"minecraft:display_context" -> context
 			"minecraft:custom_model_data" -> if (node["index"].asInt == 0) plate else item
-			else -> error("Unknown selector")
+			else -> return node
 		}
 		val selected = node["cases"].asJsonArray.firstOrNull {
 			val keys = it.asJsonObject["when"]

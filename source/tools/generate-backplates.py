@@ -242,6 +242,22 @@ class Generator:
         return {"model": {"type": "minecraft:composite", "models": [select(0, plates, dict(plates)["task"]), views(icons(gui_icons), icons(held_icons), icons(fixed_icons))]}}
 
 
+def settings_icon(node):
+    if isinstance(node, list):
+        return [settings_icon(value) for value in node]
+    if not isinstance(node, dict):
+        return node
+    if node.get("type") == "minecraft:select" and node.get("property") == "minecraft:custom_model_data":
+        value = "task" if node.get("index", 0) == 0 else "minecraft:knowledge_book"
+        selected = next((case["model"] for case in node["cases"]
+                         if value in (case["when"] if isinstance(case["when"], list) else [case["when"]])), node["fallback"])
+        result = settings_icon(selected)
+        if "transformation" in node:
+            result = {"type": "minecraft:composite", "models": [result], "transformation": node["transformation"]}
+        return result
+    return {key: settings_icon(value) for key, value in node.items()}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("client_jar", type=Path)
@@ -249,11 +265,12 @@ def main():
     args = parser.parse_args()
     with ZipFile(args.client_jar) as jar:
         result = Generator(jar).generate()
-    path = ROOT / "resourcepack/assets/tasktussle/items/advancement_icon.json"
-    if args.check:
-        assert json.loads(path.read_text()) == result, "Regenerate the backplate item catalog"
-    else:
-        path.write_text(json.dumps(result, indent=2) + "\n")
+    for name, model in (("advancement_icon", result), ("advancement_settings", settings_icon(result))):
+        path = ROOT / f"resourcepack/assets/tasktussle/items/{name}.json"
+        if args.check:
+            assert json.loads(path.read_text()) == model, "Regenerate the backplate item catalog"
+        else:
+            path.write_text(json.dumps(model, indent=2) + "\n")
     print(f"{'Checked' if args.check else 'Generated'} all item selectors and three independent plates.")
 
 

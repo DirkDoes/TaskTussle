@@ -10,6 +10,14 @@ spec.loader.exec_module(backplates)
 
 
 class SharedTransformsTest(unittest.TestCase):
+    def test_settings_icon_keeps_selected_transform_and_native_model(self):
+        leaf = {"type": "minecraft:model", "model": "minecraft:item/knowledge_book"}
+        node = backplates.select(1, [("minecraft:knowledge_book", leaf)], {"type": "minecraft:empty"})
+        node["transformation"] = {"scale": [.75] * 3}
+        result = backplates.settings_icon(node)
+        self.assertEqual([leaf], result["models"])
+        self.assertEqual(node["transformation"], result["transformation"])
+
     def test_common_transform_moves_around_selector_but_exception_stays(self):
         diamond = backplates.composite({"type": "minecraft:model", "model": "minecraft:item/diamond"}, [0, 0, 1], [.75] * 3)
         emerald = copy.deepcopy(diamond)
