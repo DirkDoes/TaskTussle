@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack
 
 class TradeTask(template: TaskTemplate) : ITask(template) {
 	override val typeName = "Trade Task"
+	override val separateDescription = true
 	override fun name(server: MinecraftServer?) = TradeTaskFiles.name(server, template.id)
 	override fun icon(server: MinecraftServer?, settings: TaskTussleSettings) = ItemStack(TradeTaskManager.icon).apply {
 		set(DataComponents.ITEM_MODEL, TradeTaskManager.iconModel)

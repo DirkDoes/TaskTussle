@@ -27,7 +27,10 @@ class PvpSystem(private val system: TaskTussleSystem) {
 			"PVP: ${if (optedIn) "Opted in" else "Opted out"}",
 			if (optedIn) ChatFormatting.GREEN else ChatFormatting.GRAY,
 			listOf("Left or right click to toggle", "Your choice locks when the game starts", "Teammate damage is always enabled"),
-		).apply { mode.iconModel?.let { set(DataComponents.ITEM_MODEL, it) } }
+		).apply {
+			remove(DataComponents.ATTRIBUTE_MODIFIERS)
+			mode.iconModel?.let { set(DataComponents.ITEM_MODEL, it) }
+		}
 	}
 
 	fun toggle(player: ServerPlayer): Boolean {

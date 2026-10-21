@@ -85,7 +85,10 @@ class SettingsMenu(
 	}
 
 	private fun setting(slot: Int, item: Item, title: String, lore: List<String> = emptyList(), count: Int = 1, enchanted: Boolean = false, model: Identifier? = null, action: (ServerPlayer, Click) -> Unit = { _, _ -> }) {
-		val stack = named(item, title, ChatFormatting.GOLD, if (readOnly) emptyList() else lore, max(1, count), enchanted).apply { if (model != null) set(DataComponents.ITEM_MODEL, model) }
+		val stack = named(item, title, ChatFormatting.GOLD, if (readOnly) emptyList() else lore, max(1, count), enchanted).apply {
+			remove(DataComponents.ATTRIBUTE_MODIFIERS)
+			if (model != null) set(DataComponents.ITEM_MODEL, model)
+		}
 		if (readOnly) display(slot, stack) else button(slot, stack) { player, click -> action(player, click); if (player.containerMenu === this) refresh() }
 	}
 }
