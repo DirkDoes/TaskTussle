@@ -80,6 +80,45 @@ def views(gui, held, fixed):
     return {"type": "minecraft:select", "property": "minecraft:display_context", "cases": [{"when": HAND_CONTEXTS, "model": held}, {"when": "fixed", "model": fixed}], "fallback": gui}
 
 
+def shared_select(index, entries, fallback):
+    # Select the transform once per group, then select the item inside that group.
+    groups = {}
+    for key, value in entries:
+        signature = json.dumps(value.get("transformation"), sort_keys=True)
+        groups.setdefault(signature, []).append((key, value))
+    cases = []
+    for group in groups.values():
+        transformation = group[0][1].get("transformation")
+        if transformation is None or len(group) == 1:
+            cases.extend(group)
+            continue
+        models = [(key, {k: v for k, v in value.items() if k != "transformation"}) for key, value in group]
+        node = select(index, models, {"type": "minecraft:empty"})
+        node["transformation"] = transformation
+        cases.append(([key for key, _ in group], node))
+    return select(index, cases, fallback)
+
+
+def share_transforms(node):
+    for key, value in list(node.items()):
+        if isinstance(value, dict) and "type" in value:
+            node[key] = share_transforms(value)
+        elif isinstance(value, list):
+            node[key] = [share_transforms(entry) if isinstance(entry, dict) else entry for entry in value]
+        elif isinstance(value, dict) and "model" in value:
+            node[key] = share_transforms(value)
+    parts = children(node)
+    if node.get("type") == "minecraft:composite" and len(parts) == 1 and "transformation" not in node:
+        return parts[0]
+    if parts and "transformation" not in node:
+        common = parts[0].get("transformation")
+        if common is not None and all(part.get("transformation") == common for part in parts):
+            node["transformation"] = common
+            for part in parts:
+                del part["transformation"]
+    return node
+
+
 class Generator:
     def __init__(self, jar):
         self.jar = jar
@@ -172,7 +211,7 @@ class Generator:
         return composite(result)
 
     def generate(self):
-        icons, volumes = [], []
+        gui_icons, held_icons, fixed_icons, volumes = [], [], [], []
         for name in sorted(self.jar.namelist()):
             if not name.startswith("assets/minecraft/items/") or not name.endswith(".json"):
                 continue
@@ -188,8 +227,11 @@ class Generator:
             if not volume:
                 held["transformation"]["translation"][2] = .0625
             fixed = override.get("fixed_model") or self.fixed(native)
-            icons.append((item, views(gui, held, fixed)))
-        fallback = dict(icons)["minecraft:knowledge_book"]
+            gui_icons.append((item, share_transforms(gui)))
+            held_icons.append((item, share_transforms(held)))
+            fixed_icons.append((item, share_transforms(fixed)))
+        def icons(entries):
+            return shared_select(1, entries, dict(entries)["minecraft:knowledge_book"])
         plates = []
         for frame in ("task", "goal", "challenge"):
             plate = {"type": "minecraft:model", "model": f"tasktussle:item/advancement_{frame}"}
@@ -197,7 +239,7 @@ class Generator:
             held = select(1, [(volumes, composite(plate, [0, 0, -.375]))], plate)
             fixed = composite(plate, [0, 0, -.5], [1, 1, 2])
             plates.append((frame, views(gui, held, fixed)))
-        return {"model": {"type": "minecraft:composite", "models": [select(0, plates, dict(plates)["task"]), select(1, icons, fallback)]}}
+        return {"model": {"type": "minecraft:composite", "models": [select(0, plates, dict(plates)["task"]), views(icons(gui_icons), icons(held_icons), icons(fixed_icons))]}}
 
 
 def main():
@@ -212,7 +254,7 @@ def main():
         assert json.loads(path.read_text()) == result, "Regenerate the backplate item catalog"
     else:
         path.write_text(json.dumps(result, indent=2) + "\n")
-    print(f"{'Checked' if args.check else 'Generated'} {len(result['model']['models'][1]['cases'])} item selectors and three independent plates.")
+    print(f"{'Checked' if args.check else 'Generated'} all item selectors and three independent plates.")
 
 
 if __name__ == "__main__":
