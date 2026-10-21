@@ -18,7 +18,7 @@ object AdvancementsFiles : ITaskFiles {
 	override fun accepts(server: MinecraftServer, id: Identifier) = server.advancements.get(id)?.value?.display?.isPresent == true
 	override fun available(server: MinecraftServer) = server.advancements.allAdvancements.asSequence().filter { it.value.display.isPresent }.map { it.id }
 	override fun name(server: MinecraftServer?, id: Identifier) = advancementName(server, id)
-	override fun icon(server: MinecraftServer?, settings: TaskTussleSettings, id: Identifier) = advancementIcon(server, settings, id)
+	override fun icon(server: MinecraftServer?, settings: TaskTussleSettings, id: Identifier) = advancementIcon(server, id)
 	override fun description(server: MinecraftServer?, id: Identifier) = advancementDescription(server, id)
 
 	override fun generated(server: MinecraftServer): TaskPools {

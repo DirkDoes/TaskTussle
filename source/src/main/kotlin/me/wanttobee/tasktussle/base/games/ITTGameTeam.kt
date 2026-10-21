@@ -11,12 +11,6 @@ interface ITTGameTeam {
 	val color get() = team.color
 	val tasks get() = card.tasks
 	val completed get() = card.completed
-	var succeedTokens: Int
-		get() = card.succeedTokens
-		set(value) { card.succeedTokens = value }
-	var succeedTokensMax: Int
-		get() = card.succeedTokensMax
-		set(value) { card.succeedTokensMax = value }
 	fun displayName() = team.displayName()
 }
 

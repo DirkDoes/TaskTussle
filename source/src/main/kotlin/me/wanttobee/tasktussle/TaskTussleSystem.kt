@@ -12,7 +12,6 @@ import me.wanttobee.tasktussle.base.tasks.ITask
 import me.wanttobee.tasktussle.base.tasks.TaskCatalog
 import me.wanttobee.tasktussle.base.tasks.TaskEvent
 import me.wanttobee.tasktussle.base.tasks.TaskFactory
-import me.wanttobee.tasktussle.base.tasks.TaskOptionsMenu
 import me.wanttobee.tasktussle.base.tasks.deliveryTask
 import me.wanttobee.tasktussle.items.ForcedItems
 import me.wanttobee.tasktussle.pvp.PvpSystem
@@ -135,7 +134,7 @@ class TaskTussleSystem(
 		teams.listedTeams = emptyList()
 		timer.clearTimerBar()
 		server.playerList.players.forEach { player ->
-			if (player.containerMenu is ITTCardGui || player.containerMenu is TaskOptionsMenu) player.closeContainer()
+			if (player.containerMenu is ITTCardGui) player.closeContainer()
 		}
 		server.playerList.players.forEach(items::removeGameItems)
 		server.playerList.players.forEach(items::giveSettingsTool)
@@ -167,20 +166,8 @@ class TaskTussleSystem(
 		val team = active.teams.find { it.index == teamIndex } ?: return false
 		val task = team.tasks.getOrNull(taskIndex) ?: return false
 		if (player.uuid !in team.members || task.completed || task.failed || active.paused || active.finished) return false
-		if (rightClick) {
-			menus.openTaskOptions(player, teamIndex, taskIndex)
-			return true
-		}
+		if (rightClick) return false
 		return task.click(player, settings) && complete(player.level().server, active, team, task, player)
-	}
-
-	fun useSucceedToken(player: ServerPlayer, teamIndex: Int, taskIndex: Int): Boolean {
-		val active = game ?: return false
-		val team = active.teams.find { it.index == teamIndex } ?: return false
-		val task = team.tasks.getOrNull(taskIndex) ?: return false
-		if (player.uuid !in team.members || team.succeedTokens <= 0 || task.completed || task.failed || active.paused || active.finished) return false
-		team.succeedTokens--
-		return complete(player.level().server, active, team, task, player)
 	}
 
 	fun clickDeliverySpot(player: ServerPlayer, stack: ItemStack) {

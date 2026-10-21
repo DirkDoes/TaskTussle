@@ -24,8 +24,6 @@ object BingoManager : ITTGameManager {
 		val mutual = factory.generate(settings.mutualTasks, settings) ?: return null
 		val gameTeams = teams.map(::BingoTeam)
 		for (team in gameTeams) {
-			team.succeedTokens = settings.succeedTokens
-			team.succeedTokensMax = settings.succeedTokens
 			val templates = when {
 				settings.mutualTasks == 25 -> mutual
 				settings.mutualTasks < 25 -> {
@@ -61,7 +59,7 @@ object BingoManager : ITTGameManager {
 	override fun goal(settings: TaskTussleSettings) = settings.winningCondition
 	override fun settingsMenu(id: Int, inventory: Inventory, system: TaskTussleSystem) = BingoSettingsMenu(id, inventory, system)
 	override fun settingsLore(settings: TaskTussleSettings) = listOf(
-		"Succeed tokens: ${settings.succeedTokens}", "Overtime: ${settings.overtime}",
+		"Overtime: ${settings.overtime}",
 		"${if (settings.mutualTasks <= 25) "Mutual tasks" else "Task pool"}: ${settings.mutualTasks}",
 		"Win condition: ${settings.winningCondition}",
 	)

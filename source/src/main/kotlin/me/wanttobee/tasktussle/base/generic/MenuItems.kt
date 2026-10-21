@@ -18,7 +18,6 @@ internal val mutualLore = listOf("L Click: Increase amount", "R Click: Decrease 
 
 internal fun ratioChange(value: Int, click: Click): Int = when { click.right && click.shift -> 0; click.right -> max(0, value - 1); else -> minOf(100, value + 1) }
 
-internal fun simpleChange(value: Int, click: Click, min: Int, max: Int): Int = (value + if (click.right) -1 else 1).coerceIn(min, max)
 
 internal fun separator(title: String = " "): ItemStack = named(Blocks.STAINED_GLASS_PANE.gray().asItem(), title, ChatFormatting.DARK_GRAY).apply {
 	set(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath("tasktussle", "empty_slot"))

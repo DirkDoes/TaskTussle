@@ -8,7 +8,6 @@ import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.data.registries.VanillaRegistries
 import net.minecraft.resources.Identifier
 import net.minecraft.server.Bootstrap
-import net.minecraft.world.item.Items
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -32,15 +31,12 @@ class TaskIconTest {
 		assertEquals(Identifier.parse("tasktussle:advancement_icon"), advancementIcon.get(DataComponents.ITEM_MODEL))
 		assertEquals(listOf("task", "minecraft:diamond"), advancementIcon.get(DataComponents.CUSTOM_MODEL_DATA)?.strings)
 		assertEquals(listOf("Task: Advancements Task", "Description:", "complete this advancement"), advancementIcon.get(DataComponents.LORE)?.lines?.map { it.string })
-		system.settings.customAdvancementIcons = false
-		assertEquals(Items.KNOWLEDGE_BOOK, taskStack(system, advancement).item)
 
 		val click = factory.create(TaskTemplate(TaskKind.CLICK, Identifier.parse("tasktussle:click"), Difficulty.EASY))
 		assertEquals("CLICK ME", click.name(null))
 		assertTrue(taskStack(system, click).get(DataComponents.ITEM_MODEL) in (1..3).map { Identifier.parse("tasktussle:click_me$it") })
 		click.completed = true
 		advancement.completed = true
-		system.settings.customAdvancementIcons = true
 		assertTrue(click.icon(null, system.settings).get(DataComponents.ITEM_MODEL) in (1..3).map { Identifier.parse("tasktussle:click_me$it") })
 		val completionIcon = advancement.icon(null, system.settings)
 		assertEquals(Identifier.parse("tasktussle:advancement_icon"), completionIcon.get(DataComponents.ITEM_MODEL))

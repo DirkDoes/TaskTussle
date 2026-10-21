@@ -9,7 +9,6 @@ import me.wanttobee.tasktussle.base.tasks.Difficulty
 import me.wanttobee.tasktussle.base.tasks.FilePickerMenu
 import me.wanttobee.tasktussle.base.tasks.ITaskFiles
 import me.wanttobee.tasktussle.base.tasks.TaskCatalog
-import me.wanttobee.tasktussle.base.tasks.TaskOptionsMenu
 import me.wanttobee.tasktussle.base.tasks.TaskPools
 import me.wanttobee.tasktussle.base.tasks.mayCreateCatalog
 import me.wanttobee.tasktussle.base.tasks.mayEditCatalog
@@ -144,17 +143,6 @@ class TaskMenus(private val system: TaskTussleSystem) {
 	}
 
 	private fun isOperator(player: ServerPlayer) = player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)
-
-	fun openTaskOptions(player: ServerPlayer, teamIndex: Int, taskIndex: Int) {
-		val active = game ?: return
-		val team = active.teams.find { it.index == teamIndex } ?: return
-		val task = team.tasks.getOrNull(taskIndex) ?: return
-		if (team.succeedTokensMax <= 0) return
-		openMenu(player, SimpleMenuProvider(
-			{ id, inventory, _ -> TaskOptionsMenu(id, inventory, system, teamIndex, taskIndex) },
-			Component.literal(task.name(server)),
-		))
-	}
 
 	fun selectCatalog(player: ServerPlayer, catalog: ITaskFiles, file: String): Boolean {
 		val old = catalog.selectedFile(settings)

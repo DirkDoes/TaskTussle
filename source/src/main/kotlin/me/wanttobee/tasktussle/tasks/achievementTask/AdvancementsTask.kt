@@ -10,7 +10,7 @@ class AdvancementsTask(template: TaskTemplate) : ITask(template) {
 	override val typeName = "Advancements Task"
 	override val separateDescription = true
 	override fun name(server: MinecraftServer?) = advancementName(server, template.id)
-	override fun icon(server: MinecraftServer?, settings: TaskTussleSettings) = advancementIcon(server, settings, template.id)
+	override fun icon(server: MinecraftServer?, settings: TaskTussleSettings) = advancementIcon(server, template.id)
 	override fun description(server: MinecraftServer?) = advancementDescription(server, template.id) ?: "complete this advancement"
 	override fun completedDescription(server: MinecraftServer?) = advancementDescription(server, template.id)
 	override fun poll(player: ServerPlayer, settings: TaskTussleSettings) =

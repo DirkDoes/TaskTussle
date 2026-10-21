@@ -16,11 +16,9 @@ data class TaskTussleSettings(
 	var handInItems: Boolean = false,
 	var mutualTasks: Int = 15,
 	var winningCondition: String = "1 line",
-	var succeedTokens: Int = 0,
 	var gameMinutes: Int = 0,
 	var overtime: String = "draw",
 	var blocksFile: String = "blocks_default.yml",
 	var advancementsFile: String = "advancements_default.yml",
 	var tradesFile: String = "trades_default.yml",
-	var customAdvancementIcons: Boolean = true,
 )

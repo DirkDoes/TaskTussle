@@ -20,7 +20,7 @@ object AdvancementsTaskManager : ITaskManager {
 	override fun setWeight(settings: TaskTussleSettings, value: Int) { settings.advancementWeight = value }
 	override fun create(template: TaskTemplate) = AdvancementsTask(template)
 	override fun settingsMenu(id: Int, inventory: Inventory, system: TaskTussleSystem) = AdvancementSettingsMenu(id, inventory, system)
-	override fun settingsLore(settings: TaskTussleSettings) = listOf("File: ${settings.advancementsFile}", "Icons: ${if (settings.customAdvancementIcons) "custom" else "recipe books"}")
+	override fun settingsLore(settings: TaskTussleSettings) = listOf("File: ${settings.advancementsFile}")
 
 	override fun prepare(server: MinecraftServer, teams: List<ITTGameTeam>, settings: TaskTussleSettings) {
 		if (settings.cardVisibility != "visible") server.allLevels.forEach { level ->

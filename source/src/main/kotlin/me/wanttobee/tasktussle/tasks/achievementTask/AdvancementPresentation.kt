@@ -1,6 +1,5 @@
 package me.wanttobee.tasktussle.tasks.achievementTask
 
-import me.wanttobee.tasktussle.base.generic.TaskTussleSettings
 import net.minecraft.core.component.DataComponents
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.Identifier
@@ -18,8 +17,7 @@ fun advancementName(server: MinecraftServer?, id: Identifier): String =
 fun advancementDescription(server: MinecraftServer?, id: Identifier): String? =
 	server?.advancements?.get(id)?.value?.display?.orElse(null)?.description?.string?.takeIf(String::isNotBlank)
 
-fun advancementIcon(server: MinecraftServer?, settings: TaskTussleSettings, id: Identifier): ItemStack {
-	if (!settings.customAdvancementIcons) return ItemStack(Items.KNOWLEDGE_BOOK)
+fun advancementIcon(server: MinecraftServer?, id: Identifier): ItemStack {
 	val icon = server?.advancements?.get(id)?.value?.display?.orElse(null)?.icon?.create() ?: ItemStack(Items.KNOWLEDGE_BOOK)
 	val style = advancementIcons[id.toString()]
 	val mappedItem = style?.let { BuiltInRegistries.ITEM.getValue(Identifier.parse(it.item)) }
