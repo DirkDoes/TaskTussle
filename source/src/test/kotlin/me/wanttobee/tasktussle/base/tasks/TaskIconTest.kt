@@ -43,20 +43,18 @@ class TaskIconTest {
 		val click = factory.create(TaskTemplate(TaskKind.CLICK, Identifier.parse("tasktussle:click"), Difficulty.EASY))
 		assertEquals("CLICK ME", click.name(null))
 		assertTrue(taskStack(system, click).get(DataComponents.ITEM_MODEL) in (1..3).map { Identifier.parse("tasktussle:click_me$it") })
-		click.completed = true
-		advancement.completed = true
+		click.claim()
+		advancement.claim()
 		assertTrue(click.icon(null, system.settings).get(DataComponents.ITEM_MODEL) in (1..3).map { Identifier.parse("tasktussle:click_me$it") })
 		val completionIcon = advancement.icon(null, system.settings)
 		assertEquals(Identifier.parse("tasktussle:advancement_icon"), completionIcon.get(DataComponents.ITEM_MODEL))
 		assertEquals(listOf("task", "minecraft:diamond"), completionIcon.get(DataComponents.CUSTOM_MODEL_DATA)?.strings)
 
-		block.completed = true
-		block.contributors += "Alice"
+		block.claim()
 		val completeIcon = taskStack(system, block)
 		assertEquals(Identifier.parse("tasktussle:task_complete"), completeIcon.get(DataComponents.ITEM_MODEL))
 		assertEquals(listOf("Completed", "Alice"), completeIcon.get(DataComponents.LORE)?.lines?.map { it.string })
-		click.completed = false
-		click.failed = true
-		assertEquals(listOf("Failed"), taskStack(system, click).get(DataComponents.LORE)?.lines?.map { it.string })
+		val failedClick = factory.create(click.template).apply { progress.fail() }
+		assertEquals(listOf("Failed"), taskStack(system, failedClick).get(DataComponents.LORE)?.lines?.map { it.string })
 	}
 }

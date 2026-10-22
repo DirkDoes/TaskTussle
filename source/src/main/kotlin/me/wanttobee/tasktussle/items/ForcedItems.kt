@@ -34,7 +34,7 @@ class ForcedItems(private val system: TaskTussleSystem) {
 
 	fun giveCard(player: ServerPlayer) = giveAt(
 		player, 8, Items.PAPER, "Task Tussle Card", ChatFormatting.GREEN, CARD_MARKER,
-		BINGO_CARD_MODEL.takeIf { TaskTussleResourcePackServer.active },
+		system.currentGame()?.manager?.cardItemModel.takeIf { TaskTussleResourcePackServer.active },
 	)
 
 	fun giveTeamNavigator(player: ServerPlayer) = giveAt(
@@ -145,7 +145,6 @@ class ForcedItems(private val system: TaskTussleSystem) {
 		private const val SETTINGS_SLOT = 4
 		private const val PVP_SLOT = SETTINGS_SLOT - 1
 		private const val TASK_BROWSER_SLOT = 5
-		private val BINGO_CARD_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "bingo_card")
 		private val TEAMS_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "teams")
 		private val DELIVERY_SPOT_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "delivering_spot")
 		private val DELIVERY_SPOT_SIGN_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "delivering_spot_sign")

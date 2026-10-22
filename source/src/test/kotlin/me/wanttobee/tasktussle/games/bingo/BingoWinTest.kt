@@ -1,5 +1,7 @@
 package me.wanttobee.tasktussle.games.bingo
 
+import me.wanttobee.tasktussle.base.tasks.claim
+
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -13,7 +15,7 @@ import net.minecraft.resources.Identifier
 class BingoWinTest {
 	private fun card(completed: Set<Int>): List<ITask> = (0 until 25).map { index ->
 		ObtainTask(TaskTemplate(TaskKind.BLOCK, Identifier.fromNamespaceAndPath("test", "block_$index"), Difficulty.EASY)).apply {
-			this.completed = index in completed
+			if (index in completed) claim()
 		}
 	}
 

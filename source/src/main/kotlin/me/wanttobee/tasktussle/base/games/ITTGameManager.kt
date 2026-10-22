@@ -6,12 +6,15 @@ import me.wanttobee.tasktussle.base.generic.TaskTussleSettings
 import me.wanttobee.tasktussle.base.tasks.TaskFactory
 import me.wanttobee.tasktussle.teams.Team
 import net.minecraft.world.MenuProvider
+import net.minecraft.resources.Identifier
 
 interface ITTGameManager : IManager {
 	val teamRange: IntRange
+	val cardItemModel: Identifier? get() = null
 	fun create(teams: List<Team>, settings: TaskTussleSettings, factory: TaskFactory): ITTGame?
 	fun cardMenu(system: TaskTussleSystem, game: ITTGame, team: ITTGameTeam, viewer: ITTGameTeam?): MenuProvider
-	fun hasWon(team: ITTGameTeam, settings: TaskTussleSettings): Boolean
+	fun isFinished(game: ITTGame, team: ITTGameTeam, settings: TaskTussleSettings): Boolean
+	fun completionWinner(game: ITTGame, team: ITTGameTeam, settings: TaskTussleSettings): ITTGameTeam? = team
 	fun timeUpWinner(game: ITTGame, settings: TaskTussleSettings): ITTGameTeam?
 	fun goal(settings: TaskTussleSettings): String
 }

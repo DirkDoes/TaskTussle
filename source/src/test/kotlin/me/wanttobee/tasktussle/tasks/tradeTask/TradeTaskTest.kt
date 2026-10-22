@@ -1,5 +1,7 @@
 package me.wanttobee.tasktussle.tasks.tradeTask
 
+import me.wanttobee.tasktussle.base.tasks.claim
+
 import com.mojang.serialization.JsonOps
 import java.util.Optional
 import kotlin.test.Test
@@ -125,7 +127,7 @@ class TradeTaskTest {
 			assertEquals(cardIcon.get(DataComponents.ITEM_MODEL), editorIcon.get(DataComponents.ITEM_MODEL))
 			assertEquals(cardIcon.get(DataComponents.CUSTOM_MODEL_DATA), editorIcon.get(DataComponents.CUSTOM_MODEL_DATA))
 			assertEquals(ItemStack(BuiltInRegistries.ITEM.getValue(template.id)).hoverName.string, cardIcon.get(DataComponents.CUSTOM_NAME)?.string)
-			task.completed = true
+			task.claim()
 			assertEquals(Identifier.parse("tasktussle:task_complete"), taskStack(system, task).get(DataComponents.ITEM_MODEL))
 		}
 		val inventory = Inventory::class.java.constructors.single().newInstance(null, EntityEquipment()) as Inventory

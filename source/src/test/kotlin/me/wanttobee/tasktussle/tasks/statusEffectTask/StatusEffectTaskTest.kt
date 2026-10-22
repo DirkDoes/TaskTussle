@@ -1,5 +1,7 @@
 package me.wanttobee.tasktussle.tasks.statusEffectTask
 
+import me.wanttobee.tasktussle.base.tasks.claim
+
 import java.nio.file.Files
 import java.nio.file.Path
 import me.wanttobee.tasktussle.TaskTussleGrouper
@@ -69,7 +71,7 @@ class StatusEffectTaskTest {
 			val model = Identifier.fromNamespaceAndPath("tasktussle", "status_effect/${effect.path}")
 			assertEquals(model, taskStack(system, task).get(DataComponents.ITEM_MODEL))
 			assertEquals(task.name(null), taskStack(system, task).get(DataComponents.CUSTOM_NAME)?.string)
-			task.completed = true
+			task.claim()
 			// The completion display uses task.icon, independently of the completed card marker.
 			assertEquals(model, task.icon(null, settings).get(DataComponents.ITEM_MODEL))
 			assertEquals(Identifier.parse("tasktussle:task_complete"), taskStack(system, task).get(DataComponents.ITEM_MODEL))

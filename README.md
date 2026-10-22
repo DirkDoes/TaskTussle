@@ -7,7 +7,14 @@ TaskTussle is a server-side Fabric mod for Minecraft 26.2. Games share a generic
 | Game | Summary |
 | --- | --- |
 | Bingo | Complete tasks on a 5×5 card to meet the chosen win condition. Supports 1–12 teams. |
+| Lockout | Race on one shared 5×5 card. Each task accepts the first N distinct teams (default 1). When all tasks close, the most claims wins; ties draw. Supports 1–12 teams. |
 | More games | Planned, using the same task system. |
+
+The optional Game Time setting applies to both games, with +1/-1 and +10/-10 minute buttons; zero disables the timer. Bingo's default timeout rule ranks completed lines (rows, columns, and diagonals), then completed tasks, then draws if still tied. Its settings also offer most tasks or always draw. Lockout defaults to most tasks at timeout, with an always-draw option.
+
+Lockout's **Teams per task** setting is capped to the number of participating teams at game start. A team can claim each task once; the ordered claim list shows the team and player. Completed and locked-out slots currently share the existing success-marker texture. The shared card and scores remain public regardless of Bingo's card visibility setting. Completion records use player UUIDs for contribution percentages, including claims from players who have disconnected.
+
+Each Lockout player has their own menu and team-relative task states. Other teams appear as glass progress icons with no card-navigation buttons, including after the match. Lockout's independent textures are `resourcepack/assets/tasktussle/textures/gui/lockout_card_big.png` (menu background) and `resourcepack/assets/tasktussle/textures/item/lockout_card.png` (hotbar card); both initially copy Bingo's artwork. In Bingo, the selected sidebar team glints while the top team icon stays plain.
 
 ## Tasks
 
@@ -49,6 +56,7 @@ All commands require operator permissions except `/card` and `/display`. `/tt` a
 | `/tt help` | Show game and settings commands. |
 | `/tt settings` | Open editable game settings. |
 | `/tt start bingo <teams>` | Start Bingo with 1–12 teams. |
+| `/tt start lockout <teams>` | Start Lockout with 1–12 teams. |
 | `/tt stop` | Stop and clear the current game. |
 | `/tt finish draw` | End the game as a draw. |
 | `/tt finish out_of_time` | End the game using its time-limit rules. |

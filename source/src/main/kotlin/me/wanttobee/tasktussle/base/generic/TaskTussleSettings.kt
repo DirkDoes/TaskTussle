@@ -1,6 +1,7 @@
 package me.wanttobee.tasktussle.base.generic
 
 import me.wanttobee.tasktussle.pvp.PvpMode
+import me.wanttobee.tasktussle.base.games.TimeoutRule
 
 data class TaskTussleSettings(
 	var cardVisibility: String = "progress only",
@@ -18,9 +19,16 @@ data class TaskTussleSettings(
 	var mutualTasks: Int = 15,
 	var winningCondition: String = "1 line",
 	var gameMinutes: Int = 0,
-	var overtime: String = "draw",
+	var bingoTimeoutRule: TimeoutRule = TimeoutRule.LINES_THEN_TASKS,
+	var lockoutTimeoutRule: TimeoutRule = TimeoutRule.MOST_TASKS,
+	var sharedTaskCompletionLimit: Int = 1,
 	var blocksFile: String = "blocks_default.yml",
 	var advancementsFile: String = "advancements_default.yml",
 	var tradesFile: String = "trades_default.yml",
 	var statusEffectsFile: String = "status_effects_default.yml",
-)
+) {
+	val gameSeconds get() = gameMinutes.coerceIn(0, Int.MAX_VALUE / 60) * 60
+	fun adjustGameTime(delta: Int) {
+		gameMinutes = (gameMinutes.toLong() + delta).coerceIn(0L, (Int.MAX_VALUE / 60).toLong()).toInt()
+	}
+}

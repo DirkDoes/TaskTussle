@@ -8,9 +8,7 @@ import net.minecraft.world.item.ItemStack
 
 /** A task owns its completion checks and presentation; the running game owns rewards and winning. */
 abstract class ITask(val template: TaskTemplate) {
-	var completed = false
-	var failed = false
-	val contributors = mutableSetOf<String>()
+	val progress = TaskProgress()
 
 	abstract val typeName: String
 	abstract fun name(server: MinecraftServer?): String

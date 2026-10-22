@@ -11,6 +11,8 @@ import me.wanttobee.tasktussle.base.generic.TaskTussleSettings
 import me.wanttobee.tasktussle.base.tasks.ITask
 import me.wanttobee.tasktussle.base.tasks.TaskCatalog
 import me.wanttobee.tasktussle.base.tasks.TaskEvent
+import me.wanttobee.tasktussle.base.tasks.TaskCompletion
+import me.wanttobee.tasktussle.base.tasks.TaskState
 import me.wanttobee.tasktussle.base.tasks.TaskFactory
 import me.wanttobee.tasktussle.base.tasks.deliveryTask
 import me.wanttobee.tasktussle.items.ForcedItems
@@ -52,7 +54,7 @@ class TaskTussleSystem(
 	val menus = TaskMenus(this)
 	val items = ForcedItems(this)
 	val pvp = PvpSystem(this)
-	private val timer = GameTimer(settings)
+	private val timer = GameTimer()
 	var logEnabled = true
 	private var game: ITTGame? = null
 	internal var server: MinecraftServer? = null
@@ -107,7 +109,7 @@ class TaskTussleSystem(
 			}
 			player.sendSystemMessage(message("The goal is set to: ${manager.goal(settings)}", ChatFormatting.GREEN))
 		}
-		if (settings.gameMinutes > 0) timer.createTimerBar(server, created)
+		if (created.remainingSeconds > 0) timer.createTimerBar(server, created)
 		log("created ${teams.size} ${manager.name} teams")
 		server.playerList.players.forEach(::checkCurrentEffects)
 		return true
@@ -122,6 +124,7 @@ class TaskTussleSystem(
 		val active = game ?: return
 		if (active.finished || active.paused) return
 		if (server.tickCount % 5 == 0) checkTasks(server, active)
+		if (active.finished || active.paused) return
 		if (active.remainingSeconds > 0 && server.tickCount % 20 == 0) {
 			active.remainingSeconds--
 			timer.updateTimerBar(active)
@@ -157,9 +160,9 @@ class TaskTussleSystem(
 	fun openCard(player: ServerPlayer, requestedTeam: Int? = null): Boolean {
 		val active = game ?: return fail(player, "no game is active")
 		val own = active.teams.find { player.uuid in it.members }
-		val target = requestedTeam?.let { index -> active.teams.find { it.index == index } } ?: own
+		val target = (if (active.sharedTasks) own else requestedTeam?.let { index -> active.teams.find { it.index == index } } ?: own)
 			?: return fail(player, "no game to open")
-		if (target != own && !active.finished && settings.cardVisibility != "visible") return false
+		if (!active.sharedTasks && target != own && !active.finished && settings.cardVisibility != "visible") return false
 		menus.openMenu(player, active.manager.cardMenu(this, active, target, own))
 		return true
 	}
@@ -168,7 +171,7 @@ class TaskTussleSystem(
 		val active = game ?: return false
 		val team = active.teams.find { it.index == teamIndex } ?: return false
 		val task = team.tasks.getOrNull(taskIndex) ?: return false
-		if (player.uuid !in team.members || task.completed || task.failed || active.paused || active.finished) return false
+		if (player.uuid !in team.members || task.progress.state(team.index, active.completionLimit) != TaskState.ACTIVE || active.paused || active.finished) return false
 		if (rightClick) return false
 		return task.click(player, settings) && complete(player.level().server, active, team, task, player)
 	}
@@ -179,7 +182,7 @@ class TaskTussleSystem(
 		if (items.deliverySpotLearned.add(player.uuid)) items.giveDeliverySpot(player)
 		if (stack.isEmpty || active.paused || active.finished) return
 		val team = active.teams.find { player.uuid in it.members } ?: return
-		val task = deliveryTask(team.tasks, stack.item) ?: return
+		val task = deliveryTask(team.tasks, stack.item, team.index, active.completionLimit) ?: return
 		stack.shrink(1)
 		player.inventory.setChanged()
 		complete(player.level().server, active, team, task, player)
@@ -191,7 +194,7 @@ class TaskTussleSystem(
 		val team = active.teams.find { player.uuid in it.members } ?: return
 		for (task in team.tasks) {
 			if (active.paused || active.finished) break
-			if (!task.completed && !task.failed && task.onEvent(event, settings)) {
+			if (task.progress.state(team.index, active.completionLimit) == TaskState.ACTIVE && task.onEvent(event, settings)) {
 				complete(player.level().server, active, team, task, player)
 			}
 		}
@@ -201,11 +204,15 @@ class TaskTussleSystem(
 		player.sendSystemMessage(tagged("active taskTussle game:", ChatFormatting.YELLOW))
 		val active = game
 		if (active == null) player.sendSystemMessage(message("there is no game active", ChatFormatting.GREEN))
-		else player.sendSystemMessage(message("active: ${active.manager.name} (${active.teams.size} teams, ${active.teams.sumOf { it.tasks.count { task -> !task.completed && !task.failed } }} active tasks)", ChatFormatting.YELLOW))
+		else {
+			val openTasks = active.teams.flatMap { it.tasks }.distinct().count { !it.progress.closed(active.completionLimit) }
+			player.sendSystemMessage(message("active: ${active.manager.name} (${active.teams.size} teams, $openTasks active tasks)", ChatFormatting.YELLOW))
+		}
 	}
 
 	fun onJoin(player: ServerPlayer) {
 		items.syncPvpToggle(player)
+		timer.addPlayer(player)
 		if (game == null && teams.selection == null) items.giveSettingsTool(player)
 		if (game == null && teams.selection == null) items.giveTaskBrowser(player)
 		if (game?.teams?.any { player.uuid in it.members } == true) {
@@ -235,26 +242,26 @@ class TaskTussleSystem(
 	fun refreshCards() = server?.let(::refreshOpenCards)
 
 	private fun checkTasks(server: MinecraftServer, active: ITTGame) {
-		for (team in active.teams) for (player in team.onlinePlayers(server.playerList.players)) for (task in team.tasks.filter { !it.completed && !it.failed }) {
+		for (team in active.teams) for (player in team.onlinePlayers(server.playerList.players)) for (task in team.tasks.filter { it.progress.state(team.index, active.completionLimit) == TaskState.ACTIVE }) {
+			if (active.finished || active.paused) return
 			if (task.poll(player, settings)) complete(server, active, team, task, player)
 		}
 	}
 
 	private fun complete(server: MinecraftServer, active: ITTGame, team: ITTGameTeam, task: ITask, player: ServerPlayer): Boolean {
-		if (task.completed || task.failed || active.paused || active.finished) return false
-		task.completed = true
-		task.contributors += player.gameProfile.name
+		if (active.paused || active.finished || player.uuid !in team.members) return false
+		if (!task.progress.complete(TaskCompletion(team.index, player.uuid, player.gameProfile.name, server.tickCount), active.completionLimit)) return false
 		server.playerList.players.forEach { recipient ->
 			val sameTeam = recipient.uuid in team.members
-			if (settings.cardVisibility == "visible" || sameTeam) recipient.sendSystemMessage(completionMessage(player.gameProfile.name, team.color, task))
+			if (active.sharedTasks || settings.cardVisibility == "visible" || sameTeam) recipient.sendSystemMessage(completionMessage(player.gameProfile.name, team.color, task))
 			else if (settings.cardVisibility != "hidden") recipient.sendSystemMessage(completionMessage(player.gameProfile.name, team.color, null))
 		}
-		val won = active.manager.hasWon(team, settings)
+		val ended = active.manager.isFinished(active, team, settings)
 		team.onlinePlayers(server.playerList.players).forEach { member ->
-			if (!won) TaskTussleSounds.rewardMid(member)
+			if (!ended) TaskTussleSounds.rewardMid(member)
 		}
 		refreshOpenCards(server)
-		if (won) finish(server, team)
+		if (ended) finish(server, active.manager.completionWinner(active, team, settings))
 		after(server, TASK_ITEM_DISPLAY_DELAY_TICKS) {
 			server.playerList.getPlayer(player.uuid)?.let { showCompletionItem(it, task) }
 		}

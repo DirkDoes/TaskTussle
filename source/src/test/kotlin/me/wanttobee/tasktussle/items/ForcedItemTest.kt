@@ -1,5 +1,7 @@
 package me.wanttobee.tasktussle.items
 
+import me.wanttobee.tasktussle.base.tasks.claim
+
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
@@ -34,12 +36,11 @@ class ForcedItemTest {
 		SharedConstants.tryDetectVersion()
 		Bootstrap.bootStrap()
 		val task = ObtainTask(TaskTemplate(TaskKind.BLOCK, Identifier.fromNamespaceAndPath("minecraft", "iron_block"), Difficulty.EASY))
-		assertSame(task, deliveryTask(listOf(task), Items.IRON_BLOCK))
-		assertNull(deliveryTask(listOf(task), Items.DIRT))
-		task.completed = true
-		assertNull(deliveryTask(listOf(task), Items.IRON_BLOCK))
-		task.completed = false
-		task.failed = true
-		assertNull(deliveryTask(listOf(task), Items.IRON_BLOCK))
+		assertSame(task, deliveryTask(listOf(task), Items.IRON_BLOCK, 1, 1))
+		assertNull(deliveryTask(listOf(task), Items.DIRT, 1, 1))
+		task.claim()
+		assertNull(deliveryTask(listOf(task), Items.IRON_BLOCK, 1, 1))
+		val failedTask = ObtainTask(task.template).apply { progress.fail() }
+		assertNull(deliveryTask(listOf(failedTask), Items.IRON_BLOCK, 1, 1))
 	}
 }

@@ -1,70 +1,61 @@
-package me.wanttobee.tasktussle.games.bingo
+package me.wanttobee.tasktussle.base.games
 
 import kotlin.math.max
 import me.wanttobee.tasktussle.TaskTussleSystem
-import me.wanttobee.tasktussle.base.games.ITTCardGui
-import me.wanttobee.tasktussle.base.games.ITTGame
-import me.wanttobee.tasktussle.base.games.ITTGameTeam
-import me.wanttobee.tasktussle.base.games.onlinePlayers
 import me.wanttobee.tasktussle.base.generic.ActionChestMenu
 import me.wanttobee.tasktussle.base.generic.named
 import me.wanttobee.tasktussle.base.tasks.taskStack
-import me.wanttobee.tasktussle.resourcepack.TaskTussleResourcePackServer
+import me.wanttobee.tasktussle.base.tasks.TaskState
 import me.wanttobee.tasktussle.teams.emptyTeamSlot
 import me.wanttobee.tasktussle.teams.teamItem
 import net.minecraft.world.entity.player.Inventory
 
-internal class BingoCardGui(
+internal open class TaskGridMenu(
 	containerId: Int,
 	inventory: Inventory,
 	private val system: TaskTussleSystem,
 	private val game: ITTGame,
 	private val team: ITTGameTeam,
 	private val viewersTeam: ITTGameTeam?,
-	private val layout: BingoCardLayout,
+	private val layout: TaskGridLayout,
+	private val textured: Boolean,
 ) : ActionChestMenu(containerId, inventory, layout.rows), ITTCardGui {
 	override val customBackground = true
+	protected open val allowsTeamNavigation: Boolean get() = true
 	init { refresh() }
 
 	override fun refresh() {
 		clear()
-		if (!TaskTussleResourcePackServer.active) {
+		if (!textured) {
 			fill()
 			layout.teamSlots.forEach { display(it, emptyTeamSlot()) }
 		}
 		display(layout.viewedTeamSlot, named(teamItem(team.index, true), team.displayName(), team.color))
 		team.tasks.forEachIndexed { index, task ->
 			val slot = layout.taskSlots[index]
-			val stack = taskStack(system, task)
-			if (!task.completed && !task.failed && viewersTeam == team && !game.paused && !game.finished) {
+			val stack = taskStack(system, task, team.index, game)
+			if (task.progress.state(team.index, game.completionLimit) == TaskState.ACTIVE && viewersTeam == team && !game.paused && !game.finished) {
 				button(slot, stack) { player, click -> system.clickTask(player, team.index, index, click.right) }
 			} else display(slot, stack)
 		}
 		game.teams.forEachIndexed { index, other ->
 			val slot = layout.teamSlots[index]
 			val private = other == team
-			val visible = private || game.finished || system.settings.cardVisibility == "visible"
-			val progressVisible = private || game.finished || system.settings.cardVisibility != "hidden"
+			val visible = private || allowsTeamNavigation && (game.finished || system.settings.cardVisibility == "visible")
+			val progressVisible = !allowsTeamNavigation || private || game.finished || system.settings.cardVisibility != "hidden"
 			val lore = mutableListOf(other.onlinePlayers(currentPlayers()).joinToString { it.gameProfile.name })
-			if (progressVisible) lore += "${other.completed}/25"
-			if (game.finished) lore += contributions(other)
+			if (progressVisible) lore += "${other.completed}/${other.tasks.size}"
+			if (game.finished) lore += other.contributions(currentPlayers())
 			val stack = named(
 				teamItem(other.index, visible), if (private) "This Card" else other.displayName(), other.color, lore,
 				count = if (progressVisible) max(1, other.completed) else 1,
+				enchanted = private,
 			)
-			if (!private && (game.finished || system.settings.cardVisibility == "visible")) button(slot, stack) { player, _ -> system.openCard(player, other.index) }
+			if (!private && allowsTeamNavigation && visible) button(slot, stack) { player, _ -> system.openCard(player, other.index) }
 			else display(slot, stack)
 		}
 		broadcastChanges()
 	}
 
-	private fun currentPlayers() = checkNotNull(playerInventory.player.level().server).playerList.players
-
-	private fun contributions(team: ITTGameTeam): List<String> {
-		if (team.completed == 0) return team.onlinePlayers(currentPlayers()).map { "${it.gameProfile.name} = 0.0%" }
-		return team.onlinePlayers(currentPlayers()).map { player ->
-			val count = team.tasks.count { it.completed && player.gameProfile.name in it.contributors }
-			"${player.gameProfile.name} = ${count * 10000 / team.completed / 100.0}%"
-		}
-	}
+	private fun currentPlayers() = system.server?.playerList?.players.orEmpty()
 }
