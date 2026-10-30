@@ -21,7 +21,6 @@ class ObtainTask(template: TaskTemplate) : ITask(template) {
 	}
 
 	override fun poll(player: ServerPlayer, settings: TaskTussleSettings): Boolean {
-		if (settings.handInItems) return false
 		val wanted = requiredItem()
 		val stacks = buildList {
 			for (slot in 0 until player.inventory.containerSize) add(player.inventory.getItem(slot))
@@ -31,5 +30,4 @@ class ObtainTask(template: TaskTemplate) : ITask(template) {
 	}
 
 	override fun click(player: ServerPlayer, settings: TaskTussleSettings) = poll(player, settings)
-	override fun acceptsDelivery(item: Item) = requiredItem() == item
 }

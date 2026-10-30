@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "tasktussle:item/peacefull"
+    "model": "tasktussle:item/shared/peaceful"
   }
 }

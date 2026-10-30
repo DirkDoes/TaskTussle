@@ -14,18 +14,14 @@ import net.minecraft.world.item.Items
 import net.minecraft.world.item.component.CustomData
 
 class ForcedItems(private val system: TaskTussleSystem) {
-	private val settings get() = system.settings
 	private val game get() = system.currentGame()
 	private val selection get() = system.teams.selection
-	internal val deliverySpotLearned = mutableSetOf<java.util.UUID>()
 
 	fun isCard(stack: ItemStack): Boolean = hasMarker(stack, CARD_MARKER)
 
 	fun isTeamNavigator(stack: ItemStack): Boolean = hasMarker(stack, TEAM_NAVIGATOR_MARKER)
 
 	fun isTeamFinisher(stack: ItemStack): Boolean = hasMarker(stack, TEAM_FINISHER_MARKER)
-
-	fun isDeliverySpot(stack: ItemStack): Boolean = hasMarker(stack, DELIVERY_SPOT_MARKER)
 
 	fun isSettingsTool(stack: ItemStack): Boolean = hasMarker(stack, SETTINGS_MARKER)
 	fun isPvpToggle(stack: ItemStack): Boolean = hasMarker(stack, PVP_MARKER)
@@ -46,7 +42,7 @@ class ForcedItems(private val system: TaskTussleSystem) {
 
 	fun giveSettingsTool(player: ServerPlayer) {
 		val displaced = player.inventory.getItem(SETTINGS_SLOT).takeUnless(::isSettingsTool)?.takeUnless(ItemStack::isEmpty)?.copy()
-		giveAt(player, SETTINGS_SLOT, Items.COMPASS, "Task Tussle Settings", ChatFormatting.AQUA, SETTINGS_MARKER)
+		giveAt(player, SETTINGS_SLOT, Items.PAPER, "Task Tussle Settings", ChatFormatting.AQUA, SETTINGS_MARKER, COG_MODEL, system.menus.canEditSettings(player))
 		if (displaced != null && !player.inventory.add(displaced)) player.drop(displaced, false)
 	}
 
@@ -73,28 +69,20 @@ class ForcedItems(private val system: TaskTussleSystem) {
 		for (slot in 0 until player.inventory.containerSize) if (isPvpToggle(player.inventory.getItem(slot))) player.inventory.setItem(slot, ItemStack.EMPTY)
 	}
 
-	fun giveDeliverySpot(player: ServerPlayer) {
-		val displaced = player.inventory.getItem(DELIVERY_SPOT_SLOT).takeUnless(::isDeliverySpot)?.takeUnless(ItemStack::isEmpty)?.copy()
-		giveAt(
-			player, DELIVERY_SPOT_SLOT, Items.PAPER, "Delivery spot", ChatFormatting.GOLD, DELIVERY_SPOT_MARKER,
-			if (player.uuid in deliverySpotLearned) DELIVERY_SPOT_MODEL else DELIVERY_SPOT_SIGN_MODEL,
-		)
-		if (displaced != null && !player.inventory.add(displaced)) player.drop(displaced, false)
-	}
-
-	fun giveAt(player: ServerPlayer, slot: Int, item: net.minecraft.world.item.Item, name: String, color: ChatFormatting, marker: String, model: Identifier? = null) {
+	fun giveAt(player: ServerPlayer, slot: Int, item: net.minecraft.world.item.Item, name: String, color: ChatFormatting, marker: String, model: Identifier? = null, enchanted: Boolean = false) {
 		for (index in 0 until player.inventory.containerSize) if (hasMarker(player.inventory.getItem(index), marker)) player.inventory.setItem(index, ItemStack.EMPTY)
 		player.inventory.setItem(slot, ItemStack(item).apply {
 			set(DataComponents.CUSTOM_NAME, Component.literal(name).withStyle { it.withColor(color).withItalic(false) })
 			set(DataComponents.CUSTOM_DATA, CustomData.of(CompoundTag().apply { putString(TOOL_MARKER, marker) }))
 			if (model != null) set(DataComponents.ITEM_MODEL, model)
+			set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, enchanted)
 		})
 	}
 
 	fun removeGameItems(player: ServerPlayer) {
 		for (slot in 0 until player.inventory.containerSize) {
 			val stack = player.inventory.getItem(slot)
-			if (isCard(stack) || isDeliverySpot(stack)) player.inventory.setItem(slot, ItemStack.EMPTY)
+			if (isCard(stack)) player.inventory.setItem(slot, ItemStack.EMPTY)
 		}
 	}
 
@@ -115,11 +103,14 @@ class ForcedItems(private val system: TaskTussleSystem) {
 
 	fun restoreForcedItems(server: MinecraftServer) {
 		server.playerList.players.forEach(::syncPvpToggle)
-		if (game == null && selection == null) server.playerList.players.filter { !hasMarker(it, SETTINGS_MARKER) }.forEach(::giveSettingsTool)
+		if (game == null && selection == null) server.playerList.players.forEach { player ->
+			val tool = player.inventory.getItem(SETTINGS_SLOT)
+			if (!isSettingsTool(tool) || tool.item != Items.PAPER || tool.get(DataComponents.ITEM_MODEL) != COG_MODEL ||
+				tool.get(DataComponents.ENCHANTMENT_GLINT_OVERRIDE) != system.menus.canEditSettings(player)) giveSettingsTool(player)
+		}
 		if (game == null && selection == null) server.playerList.players.filter { !hasMarker(it, TASK_BROWSER_MARKER) }.forEach(::giveTaskBrowser)
 		game?.teams?.flatMap { it.members }?.toSet()?.let { members ->
 			server.playerList.players.filter { it.uuid in members && !hasMarker(it, CARD_MARKER) }.forEach(::giveCard)
-			if (settings.handInItems) server.playerList.players.filter { it.uuid in members && !hasMarker(it, DELIVERY_SPOT_MARKER) }.forEach(::giveDeliverySpot)
 		}
 		selection?.let { current ->
 			server.playerList.players.filter { !hasMarker(it, TEAM_NAVIGATOR_MARKER) }.forEach(::giveTeamNavigator)
@@ -137,23 +128,20 @@ class ForcedItems(private val system: TaskTussleSystem) {
 		private const val CARD_MARKER = "card"
 		private const val TEAM_NAVIGATOR_MARKER = "team_navigator"
 		private const val TEAM_FINISHER_MARKER = "team_finisher"
-		private const val DELIVERY_SPOT_MARKER = "delivery_spot"
 		private const val SETTINGS_MARKER = "settings"
 		private const val PVP_MARKER = "pvp_toggle"
 		private const val TASK_BROWSER_MARKER = "task_browser"
-		private const val DELIVERY_SPOT_SLOT = 17
 		private const val SETTINGS_SLOT = 4
 		private const val PVP_SLOT = SETTINGS_SLOT - 1
 		private const val TASK_BROWSER_SLOT = 5
 		private val TEAMS_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "teams")
-		private val DELIVERY_SPOT_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "delivering_spot")
-		private val DELIVERY_SPOT_SIGN_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "delivering_spot_sign")
+		private val COG_MODEL = Identifier.fromNamespaceAndPath("tasktussle", "cog")
 
 		@JvmStatic
 		fun isForcedItem(stack: ItemStack): Boolean = isForcedMarker(stack.get(DataComponents.CUSTOM_DATA)?.copyTag()?.getStringOr(TOOL_MARKER, ""))
 
 		internal fun isForcedMarker(marker: String?) =
-			marker == CARD_MARKER || marker == TEAM_NAVIGATOR_MARKER || marker == TEAM_FINISHER_MARKER || marker == DELIVERY_SPOT_MARKER || marker == SETTINGS_MARKER || marker == TASK_BROWSER_MARKER || marker == PVP_MARKER
+			marker == CARD_MARKER || marker == TEAM_NAVIGATOR_MARKER || marker == TEAM_FINISHER_MARKER || marker == SETTINGS_MARKER || marker == TASK_BROWSER_MARKER || marker == PVP_MARKER
 
 		fun clearNonForcedItems(player: ServerPlayer) {
 			for (slot in 0 until player.inventory.containerSize) {

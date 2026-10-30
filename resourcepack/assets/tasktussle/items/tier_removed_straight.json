@@ -2,6 +2,6 @@
   "oversized_in_gui": true,
   "model": {
     "type": "minecraft:model",
-    "model": "tasktussle:item/tier_removed_straight"
+    "model": "tasktussle:item/ui/tier_lines/removed_straight"
   }
 }

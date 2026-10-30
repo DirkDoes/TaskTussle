@@ -846,7 +846,7 @@
                           "models": [
                             {
                               "type": "minecraft:model",
-                              "model": "tasktussle:item/advancement_task"
+                              "model": "tasktussle:item/tasks/advancement/task"
                             }
                           ],
                           "transformation": {
@@ -878,7 +878,7 @@
                     ],
                     "fallback": {
                       "type": "minecraft:model",
-                      "model": "tasktussle:item/advancement_task"
+                      "model": "tasktussle:item/tasks/advancement/task"
                     }
                   }
                 },
@@ -889,7 +889,7 @@
                     "models": [
                       {
                         "type": "minecraft:model",
-                        "model": "tasktussle:item/advancement_task"
+                        "model": "tasktussle:item/tasks/advancement/task"
                       }
                     ],
                     "transformation": {
@@ -1745,7 +1745,7 @@
                       "models": [
                         {
                           "type": "minecraft:model",
-                          "model": "tasktussle:item/advancement_task"
+                          "model": "tasktussle:item/tasks/advancement/task"
                         }
                       ],
                       "transformation": {
@@ -1777,7 +1777,7 @@
                 ],
                 "fallback": {
                   "type": "minecraft:model",
-                  "model": "tasktussle:item/advancement_task"
+                  "model": "tasktussle:item/tasks/advancement/task"
                 }
               }
             }
@@ -2621,7 +2621,7 @@
                           "models": [
                             {
                               "type": "minecraft:model",
-                              "model": "tasktussle:item/advancement_goal"
+                              "model": "tasktussle:item/tasks/advancement/goal"
                             }
                           ],
                           "transformation": {
@@ -2653,7 +2653,7 @@
                     ],
                     "fallback": {
                       "type": "minecraft:model",
-                      "model": "tasktussle:item/advancement_goal"
+                      "model": "tasktussle:item/tasks/advancement/goal"
                     }
                   }
                 },
@@ -2664,7 +2664,7 @@
                     "models": [
                       {
                         "type": "minecraft:model",
-                        "model": "tasktussle:item/advancement_goal"
+                        "model": "tasktussle:item/tasks/advancement/goal"
                       }
                     ],
                     "transformation": {
@@ -3520,7 +3520,7 @@
                       "models": [
                         {
                           "type": "minecraft:model",
-                          "model": "tasktussle:item/advancement_goal"
+                          "model": "tasktussle:item/tasks/advancement/goal"
                         }
                       ],
                       "transformation": {
@@ -3552,7 +3552,7 @@
                 ],
                 "fallback": {
                   "type": "minecraft:model",
-                  "model": "tasktussle:item/advancement_goal"
+                  "model": "tasktussle:item/tasks/advancement/goal"
                 }
               }
             }
@@ -4396,7 +4396,7 @@
                           "models": [
                             {
                               "type": "minecraft:model",
-                              "model": "tasktussle:item/advancement_challenge"
+                              "model": "tasktussle:item/tasks/advancement/challenge"
                             }
                           ],
                           "transformation": {
@@ -4428,7 +4428,7 @@
                     ],
                     "fallback": {
                       "type": "minecraft:model",
-                      "model": "tasktussle:item/advancement_challenge"
+                      "model": "tasktussle:item/tasks/advancement/challenge"
                     }
                   }
                 },
@@ -4439,7 +4439,7 @@
                     "models": [
                       {
                         "type": "minecraft:model",
-                        "model": "tasktussle:item/advancement_challenge"
+                        "model": "tasktussle:item/tasks/advancement/challenge"
                       }
                     ],
                     "transformation": {
@@ -5295,7 +5295,7 @@
                       "models": [
                         {
                           "type": "minecraft:model",
-                          "model": "tasktussle:item/advancement_challenge"
+                          "model": "tasktussle:item/tasks/advancement/challenge"
                         }
                       ],
                       "transformation": {
@@ -5327,7 +5327,7 @@
                 ],
                 "fallback": {
                   "type": "minecraft:model",
-                  "model": "tasktussle:item/advancement_challenge"
+                  "model": "tasktussle:item/tasks/advancement/challenge"
                 }
               }
             }
@@ -6170,7 +6170,7 @@
                       "models": [
                         {
                           "type": "minecraft:model",
-                          "model": "tasktussle:item/advancement_task"
+                          "model": "tasktussle:item/tasks/advancement/task"
                         }
                       ],
                       "transformation": {
@@ -6202,7 +6202,7 @@
                 ],
                 "fallback": {
                   "type": "minecraft:model",
-                  "model": "tasktussle:item/advancement_task"
+                  "model": "tasktussle:item/tasks/advancement/task"
                 }
               }
             },
@@ -6213,7 +6213,7 @@
                 "models": [
                   {
                     "type": "minecraft:model",
-                    "model": "tasktussle:item/advancement_task"
+                    "model": "tasktussle:item/tasks/advancement/task"
                   }
                 ],
                 "transformation": {
@@ -7069,7 +7069,7 @@
                   "models": [
                     {
                       "type": "minecraft:model",
-                      "model": "tasktussle:item/advancement_task"
+                      "model": "tasktussle:item/tasks/advancement/task"
                     }
                   ],
                   "transformation": {
@@ -7101,7 +7101,7 @@
             ],
             "fallback": {
               "type": "minecraft:model",
-              "model": "tasktussle:item/advancement_task"
+              "model": "tasktussle:item/tasks/advancement/task"
             }
           }
         }

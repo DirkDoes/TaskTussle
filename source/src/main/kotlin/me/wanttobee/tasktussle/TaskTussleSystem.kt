@@ -14,7 +14,6 @@ import me.wanttobee.tasktussle.base.tasks.TaskEvent
 import me.wanttobee.tasktussle.base.tasks.TaskCompletion
 import me.wanttobee.tasktussle.base.tasks.TaskState
 import me.wanttobee.tasktussle.base.tasks.TaskFactory
-import me.wanttobee.tasktussle.base.tasks.deliveryTask
 import me.wanttobee.tasktussle.items.ForcedItems
 import me.wanttobee.tasktussle.pvp.PvpSystem
 import me.wanttobee.tasktussle.sounds.TaskTussleSounds
@@ -97,12 +96,10 @@ class TaskTussleSystem(
 		}
 		server.playerList.players.forEach(items::removeSettingsTool)
 		server.playerList.players.forEach(items::removeTaskBrowser)
-		items.deliverySpotLearned.clear()
 		this.teams.listedTeams = teams
 		taskFactory.prepare(server, created.teams, settings)
 		server.playerList.players.filter { player -> teams.any { player.uuid in it.members } }.forEach { player ->
 			items.giveCard(player)
-			if (settings.handInItems) items.giveDeliverySpot(player)
 			player.sendSystemMessage(message("Click with the Task Tussle Card in your hand to see your teams progress.", ChatFormatting.GREEN))
 			taskFactory.managers.forEach { taskManager ->
 				taskManager.explanation(settings)?.let { player.sendSystemMessage(message(it, ChatFormatting.GRAY)) }
@@ -136,7 +133,6 @@ class TaskTussleSystem(
 		if (game == null) return fail(commander, "trying to stop a game that doesn't exists")
 		game = null
 		delayedActions.clear()
-		items.deliverySpotLearned.clear()
 		teams.listedTeams = emptyList()
 		timer.clearTimerBar()
 		server.playerList.players.forEach { player ->
@@ -176,18 +172,6 @@ class TaskTussleSystem(
 		return task.click(player, settings) && complete(player.level().server, active, team, task, player)
 	}
 
-	fun clickDeliverySpot(player: ServerPlayer, stack: ItemStack) {
-		val active = game ?: return
-		if (!settings.handInItems) return
-		if (items.deliverySpotLearned.add(player.uuid)) items.giveDeliverySpot(player)
-		if (stack.isEmpty || active.paused || active.finished) return
-		val team = active.teams.find { player.uuid in it.members } ?: return
-		val task = deliveryTask(team.tasks, stack.item, team.index, active.completionLimit) ?: return
-		stack.shrink(1)
-		player.inventory.setChanged()
-		complete(player.level().server, active, team, task, player)
-	}
-
 	fun onTaskEvent(player: ServerPlayer, event: TaskEvent) {
 		val active = game ?: return
 		if (active.paused || active.finished) return
@@ -217,7 +201,6 @@ class TaskTussleSystem(
 		if (game == null && teams.selection == null) items.giveTaskBrowser(player)
 		if (game?.teams?.any { player.uuid in it.members } == true) {
 			items.giveCard(player)
-			if (settings.handInItems) items.giveDeliverySpot(player)
 		}
 		if (teams.selection != null) items.giveTeamNavigator(player)
 		if (teams.selection?.starter == player.uuid) items.giveTeamFinisher(player)

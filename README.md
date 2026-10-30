@@ -14,13 +14,13 @@ The optional Game Time setting applies to both games, with +1/-1 and +10/-10 min
 
 Lockout's **Teams per task** setting is capped to the number of participating teams at game start. A team can claim each task once; the ordered claim list shows the team and player. Completed and locked-out slots currently share the existing success-marker texture. The shared card and scores remain public regardless of Bingo's card visibility setting. Completion records use player UUIDs for contribution percentages, including claims from players who have disconnected.
 
-Each Lockout player has their own menu and team-relative task states. Other teams appear as glass progress icons with no card-navigation buttons, including after the match. Lockout's independent textures are `resourcepack/assets/tasktussle/textures/gui/lockout_card_big.png` (menu background) and `resourcepack/assets/tasktussle/textures/item/lockout_card.png` (hotbar card); both initially copy Bingo's artwork. In Bingo, the selected sidebar team glints while the top team icon stays plain.
+Each Lockout player has their own menu and team-relative task states. Other teams appear as glass progress icons with no card-navigation buttons, including after the match. Lockout's independent textures are `resourcepack/assets/tasktussle/textures/gui/backgrounds/lockout_card.png` (menu background) and `resourcepack/assets/tasktussle/textures/item/shared/lockout_card.png` (hotbar card); both initially copy Bingo's artwork. In Bingo, the selected sidebar team glints while the top team icon stays plain.
 
 ## Tasks
 
 | Task | Summary |
 | --- | --- |
-| Obtain | Collect the requested block, or hand it in when delivery mode is enabled. |
+| Obtain | Collect the requested block. |
 | Advancement | Earn the requested Minecraft advancement. |
 | Click | Click the task on your card to complete it. |
 | Trade | Complete a trade that buys or sells the requested item. Any merchant counts, including wandering traders. |
@@ -35,13 +35,61 @@ Status-effect tasks include all 40 vanilla effects, with estimated tiers in `sta
 - Cross-team PvP modes: on, off, or mutual opt-in. Teammate PvP stays enabled.
 - Custom menus, task displays, sounds, and an optional lobby with parkour.
 
+## Settings layout
+
+The settings cog opens the six-row game selector. Operators get a glinting cog and can edit settings; other players can browse game pages without changing values. Games occupy the first column; the selected game glints and has an unlabelled marker in the second column. Either cell on a game's row selects it, including an empty marker cell. Game icons show only their name. All settings relevant to the selected game appear directly to the right, and task types occupy the bottom row.
+
+Set **Teams** (default 2; left-click increases, right-click decreases), then use **Play** in the top-right slot to start the selected game. Play is visible only to operators when no game or team selection is active. It uses the existing random-team or player-chosen-team flow. `/tt settings` remains available; the game-start command has been removed.
+
+Reusable settings such as PvP, teams, time, difficulty weights, and task configuration reference the same underlying values on every game page. Bingo additionally exposes its win condition, timeout, mutual tasks, and card visibility. Lockout exposes its timeout and teams-per-task limit. Game rules use the same control bindings in the main page and the existing game submenus, so those values cannot drift apart.
+
+The main menu has no filler items or visible text title. Its background is `textures/gui/backgrounds/game_selector.png`, rendered through `font/game_selector.json`; `textures/item/ui/navigation/game_marker.png` uses the normal item atlas and displays at its native 16px size. Ordinary submenus retain their titles and fillers. The game registry has no six-game cap; sidebar pagination is deferred until more than six games need visible rows.
+
+Click a task type to edit its weight, catalog file, and task-specific options. Zero weight disables it. Returning from details retains your selected game, and preview mode allows switching game pages without editing settings. This settings UI remains an uncommitted prototype until tested in game.
+
+## Resource pack layout
+
+Minecraft requires the top-level asset folders (`textures`, `models`, `items`, `font`, `sounds`). TaskTussle groups files by purpose inside those folders. Paths below are relative to `resourcepack/assets/tasktussle/`.
+
+| Put this here | Folder |
+| --- | --- |
+| Full menu backgrounds | `textures/gui/backgrounds/` (generic chest sizes in `chest/`) |
+| Older background designs kept for reference | `textures/gui/drafts/` |
+| Arrows, game marker, Play | `textures/item/ui/navigation/` |
+| Reusable custom items: cog, team selector, peaceful icon, cards | `textures/item/shared/` |
+| Empty slots and tier lines | `textures/item/ui/decorations/`, `ui/tier_lines/` |
+| Advancement frames, click icons, trade icon, status effects | `textures/item/tasks/advancement/`, `click/`, `trade/`, `status_effect/` |
+| Task overlays (18×18 PNGs) | `textures/item/tasks/overlays/` |
+| Completed-task icon | `textures/item/tasks/task_complete.png` |
+| Totem item models' textures | `textures/item/effects/` |
+| Particle sprites | `textures/particle/` |
+| Menu sounds, rewards, effects | `sounds/ui/`, `sounds/rewards/`, `sounds/effects/` |
+
+**Slot icons belong under `textures/item/`, even when used in a menu.** Minecraft includes that directory in the item atlas automatically. `textures/gui/` contains full backgrounds used by bitmap fonts, not slot icons. Keep existing PNG dimensions and transparency when editing artwork.
+
+Use `item/shared/` for custom items reused across menus and the hotbar; it is independent of any particular settings screen. Use `item/ui/` for artwork specific to menu controls and decoration.
+
+`models/item/` mirrors the category paths under `textures/item/`. For example, the Play texture is `textures/item/ui/navigation/play_button.png` and its model is `models/item/ui/navigation/play_button.json`. `items/` contains the entry points selected by the mod or `/give`; their existing IDs are preserved (for example, `tasktussle:play_button`). `font/` connects menu backgrounds to their displayed glyphs. `sounds.json` keeps stable sound event names while pointing to grouped audio files.
+
+`assets/minecraft/` contains overrides whose paths Minecraft requires: inventory textures, inventory-label translations, the item shader, and the vanilla totem particle/sound definitions. Keep those paths as they are; TaskTussle's own artwork and audio live in `assets/tasktussle/`.
+
+For a new ordinary icon, add its PNG, a matching model JSON, and an `items/` entry point. For generated assets, update the generator and run it instead of hand-editing generated JSON:
+
+| Generator | Owns |
+| --- | --- |
+| `source/tools/generate-backplates.py` | `items/advancement_icon.json` and `items/advancement_settings.json` |
+| `source/tools/generate-item-overlays.py` | `items/item_overlay.json` and `models/item/tasks/overlays/`; discovers PNGs in `textures/item/tasks/overlays/` |
+| `source/tools/extract-status-effect-icons.py` | Status-effect PNGs, models, and `items/status_effect/` entry points |
+
+Each generator accepts the matching Minecraft client JAR path and optional `--check`. After moving or editing references, run `python source/tools/check-resourcepack.py` from the repository root. It checks TaskTussle model, texture, font, particle, and sound references, including filename case.
+
 ## Server setup
 
 1. Set up a Minecraft **26.2** server with **Java 25** and **Fabric Loader 0.19.3+**.
 2. Put the **TaskTussle**, **Fabric API**, and **Fabric Language Kotlin** JARs in the server's `mods/` folder. Use dependency versions compatible with Minecraft 26.2.
 3. Zip the contents of `resourcepack/` as **`tasktussle-resource-pack.zip`**, with `pack.mcmeta` and `assets/` directly inside the ZIP. Place it in the server's root folder.
 4. Start and stop the server once. In `config/tasktussle/tasktussle.json`, keep `resource_pack_enabled` set to `true` and set `resource_pack_url` to `http://YOUR_SERVER_ADDRESS:25566/tasktussle-resource-pack.zip`. Allow TCP port **25566** through your firewall/router so players can download it. The default `127.0.0.1` address is for testing on the same computer.
-5. Restart the server. TaskTussle hosts and sends the pack automatically. As an operator, use `/tt settings`, then `/tt start bingo 2` to start a two-team game.
+5. Restart the server. TaskTussle hosts and sends the pack automatically. As an operator, open the settings cog, select Bingo, set Teams to 2, and press Play.
 
 Task catalogs are generated in `config/tasktussle/` and can be managed through the in-game Task Browser.
 
@@ -55,8 +103,6 @@ All commands require operator permissions except `/card` and `/display`. `/tt` a
 | --- | --- |
 | `/tt help` | Show game and settings commands. |
 | `/tt settings` | Open editable game settings. |
-| `/tt start bingo <teams>` | Start Bingo with 1–12 teams. |
-| `/tt start lockout <teams>` | Start Lockout with 1–12 teams. |
 | `/tt stop` | Stop and clear the current game. |
 | `/tt finish draw` | End the game as a draw. |
 | `/tt finish out_of_time` | End the game using its time-limit rules. |

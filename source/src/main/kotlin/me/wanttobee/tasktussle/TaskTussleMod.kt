@@ -43,6 +43,7 @@ object TaskTussleMod : DedicatedServerModInitializer {
 		}
 		ServerPlayConnectionEvents.DISCONNECT.register { handler, _ ->
 			system.pvp.onDisconnect(handler.player)
+			system.menus.forgetSettingsGame(handler.player)
 			if (lobby.active) lobby.remove(handler.player)
 		}
 		ServerPlayerEvents.AFTER_RESPAWN.register { _, player, _ -> system.onJoin(player) }
@@ -65,7 +66,7 @@ object TaskTussleMod : DedicatedServerModInitializer {
 		val item = player.getItemInHand(hand)
 		when {
 			system.items.isPvpToggle(item) -> system.pvp.useToggle(player)
-			system.items.isSettingsTool(item) -> system.menus.openReadOnlySettings(player)
+			system.items.isSettingsTool(item) -> system.menus.openSettings(player)
 			system.items.isTaskBrowser(item) -> system.menus.openTaskBrowser(player)
 			system.items.isCard(item) -> system.openCard(player)
 			system.items.isTeamNavigator(item) -> system.teams.openTeamMaker(player)
@@ -76,10 +77,8 @@ object TaskTussleMod : DedicatedServerModInitializer {
 		return InteractionResult.SUCCESS_SERVER
 	}
 
-	internal fun isDeliverySpot(stack: net.minecraft.world.item.ItemStack) = system.items.isDeliverySpot(stack)
 	internal fun isPvpToggle(stack: net.minecraft.world.item.ItemStack) = system.items.isPvpToggle(stack)
 	internal fun togglePvp(player: ServerPlayer) = system.pvp.toggle(player)
 	internal fun usePvpToggle(player: ServerPlayer) = system.pvp.useToggle(player)
-	internal fun clickDeliverySpot(player: ServerPlayer, stack: net.minecraft.world.item.ItemStack) = system.clickDeliverySpot(player, stack)
 	internal fun onTaskEvent(player: ServerPlayer, event: TaskEvent) = system.onTaskEvent(player, event)
 }

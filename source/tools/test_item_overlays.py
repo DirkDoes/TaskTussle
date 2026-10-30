@@ -19,9 +19,9 @@ class ItemOverlaysTest(unittest.TestCase):
                   "on_false": {"type": "minecraft:model", "model": "minecraft:item/bow"}}
         with tempfile.TemporaryDirectory() as folder:
             assets = Path(folder)
-            textures = assets / "textures/item/item_overlays"
+            textures = assets / "textures/item/tasks/overlays"
             textures.mkdir(parents=True)
-            png = (overlays.ASSETS / "textures/item/item_overlays/trade_task_overlay.png").read_bytes()
+            png = (overlays.ASSETS / "textures/item/tasks/overlays/trade_task_overlay.png").read_bytes()
             for index in range(10):
                 (textures / f"overlay_{index}.png").write_bytes(png)
             with ZipFile(assets / "client.jar", "w") as jar:

@@ -1,6 +1,0 @@
-{
-    "parent":  "minecraft:item/generated",
-    "textures":  {
-                     "layer0":  "tasktussle:item/ui_items/advancements/advancement_challenge"
-                 }
-}

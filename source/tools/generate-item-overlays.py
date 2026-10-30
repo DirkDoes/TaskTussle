@@ -2,7 +2,7 @@
 
 Usage: python source/tools/generate-item-overlays.py <minecraft-client.jar> [--check]
 Arguments: custom_model_data.strings = ["minecraft:item_id", "overlay_texture_stem"].
-Add 18x18 PNGs to textures/item/item_overlays and rerun to register more overlays.
+Add 18x18 PNGs to textures/item/tasks/overlays and rerun to register more overlays.
 """
 
 import argparse
@@ -27,11 +27,11 @@ def generate(jar):
              for name in sorted(jar.namelist())
              if name.startswith("assets/minecraft/items/") and name.endswith(".json")]
     outputs, overlays = {}, []
-    for texture in sorted((ASSETS / "textures/item/item_overlays").glob("*.png")):
+    for texture in sorted((ASSETS / "textures/item/tasks/overlays").glob("*.png")):
         data = texture.read_bytes()
         if data[:8] != b"\x89PNG\r\n\x1a\n" or struct.unpack(">II", data[16:24]) != (18, 18):
             raise ValueError(f"Overlay must be an 18x18 PNG: {texture}")
-        model = f"item/item_overlays/{texture.stem}"
+        model = f"item/tasks/overlays/{texture.stem}"
         outputs[f"models/{model}.json"] = {
             "gui_light": "front",
             "textures": {"layer0": f"tasktussle:{model}"},

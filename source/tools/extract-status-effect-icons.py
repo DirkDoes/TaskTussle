@@ -25,13 +25,13 @@ def main():
                 continue
             effect = Path(name).stem
             outputs = {
-                f"textures/item/status_effects/{effect}.png": jar.read(name),
-                f"models/item/status_effect/{effect}.json": (json.dumps({
+                f"textures/item/tasks/status_effect/{effect}.png": jar.read(name),
+                f"models/item/tasks/status_effect/{effect}.json": (json.dumps({
                     "parent": "minecraft:item/generated",
-                    "textures": {"layer0": f"tasktussle:item/status_effects/{effect}"},
+                    "textures": {"layer0": f"tasktussle:item/tasks/status_effect/{effect}"},
                 }, indent=2) + "\n").encode(),
                 f"items/status_effect/{effect}.json": (json.dumps({
-                    "model": {"type": "minecraft:model", "model": f"tasktussle:item/status_effect/{effect}"},
+                    "model": {"type": "minecraft:model", "model": f"tasktussle:item/tasks/status_effect/{effect}"},
                 }, indent=2) + "\n").encode(),
             }
             for relative, data in outputs.items():

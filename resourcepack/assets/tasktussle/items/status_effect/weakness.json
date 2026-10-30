@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "tasktussle:item/status_effect/weakness"
+    "model": "tasktussle:item/tasks/status_effect/weakness"
   }
 }

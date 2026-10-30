@@ -41,9 +41,9 @@ class BingoCardLayoutTest {
 		assertEquals(FontDescription.Resource(Identifier.parse("tasktussle:bingo_card")), title.style.font)
 		assertEquals(0xFFFFFF, title.style.color?.value)
 		assertEquals("\uF800" + provider.getAsJsonArray("chars")[0].asString, title.string)
-		assertEquals("tasktussle:gui/bingo_card_big.png", provider.get("file").asString)
+		assertEquals("tasktussle:gui/backgrounds/bingo_card.png", provider.get("file").asString)
 		val definition = BitmapProvider.Definition.CODEC.codec().parse(JsonOps.INSTANCE, provider).orThrow
-		val image = ImageIO.read(pack.resolve("textures/gui/bingo_card_big.png").toFile())
+		val image = ImageIO.read(pack.resolve("textures/gui/backgrounds/bingo_card.png").toFile())
 		assertEquals(256, image.width)
 		assertEquals(image.height, definition.height())
 		assertEquals(13, definition.ascent())
@@ -56,11 +56,11 @@ class BingoCardLayoutTest {
 		val layout = TaskGridLayout(Identifier.parse("tasktussle:lockout_card"))
 		assertEquals(FontDescription.Resource(Identifier.parse("tasktussle:lockout_card")), layout.title(true).style.font)
 		val providers = JsonParser.parseString(Files.readString(pack.resolve("font/lockout_card.json"))).asJsonObject.getAsJsonArray("providers")
-		assertEquals("tasktussle:gui/lockout_card_big.png", providers[1].asJsonObject["file"].asString)
-		val image = ImageIO.read(pack.resolve("textures/gui/lockout_card_big.png").toFile())
+		assertEquals("tasktussle:gui/backgrounds/lockout_card.png", providers[1].asJsonObject["file"].asString)
+		val image = ImageIO.read(pack.resolve("textures/gui/backgrounds/lockout_card.png").toFile())
 		assertEquals(256, image.width)
 		assertEquals(image.height, providers[1].asJsonObject["height"].asInt)
 		assertTrue(Files.exists(pack.resolve("items/lockout_card.json")))
-		assertTrue(Files.exists(pack.resolve("textures/item/lockout_card.png")))
+		assertTrue(Files.exists(pack.resolve("textures/item/shared/lockout_card.png")))
 	}
 }

@@ -9,42 +9,42 @@
     },
     {
       "type": "bitmap",
-      "file": "tasktussle:gui/chest/generic_1.png",
+      "file": "tasktussle:gui/backgrounds/chest/generic_1.png",
       "height": 132,
       "ascent": 13,
       "chars": ["\uF801"]
     },
     {
       "type": "bitmap",
-      "file": "tasktussle:gui/chest/generic_2.png",
+      "file": "tasktussle:gui/backgrounds/chest/generic_2.png",
       "height": 150,
       "ascent": 13,
       "chars": ["\uF802"]
     },
     {
       "type": "bitmap",
-      "file": "tasktussle:gui/chest/generic_3.png",
+      "file": "tasktussle:gui/backgrounds/chest/generic_3.png",
       "height": 168,
       "ascent": 13,
       "chars": ["\uF803"]
     },
     {
       "type": "bitmap",
-      "file": "tasktussle:gui/chest/generic_4.png",
+      "file": "tasktussle:gui/backgrounds/chest/generic_4.png",
       "height": 186,
       "ascent": 13,
       "chars": ["\uF804"]
     },
     {
       "type": "bitmap",
-      "file": "tasktussle:gui/chest/generic_5.png",
+      "file": "tasktussle:gui/backgrounds/chest/generic_5.png",
       "height": 204,
       "ascent": 13,
       "chars": ["\uF805"]
     },
     {
       "type": "bitmap",
-      "file": "tasktussle:gui/chest/generic_6.png",
+      "file": "tasktussle:gui/backgrounds/chest/generic_6.png",
       "height": 222,
       "ascent": 13,
       "chars": ["\uF806"]

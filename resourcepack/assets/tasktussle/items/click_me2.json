@@ -1,6 +1,6 @@
 {
     "model":  {
-                  "model":  "tasktussle:item/click_me2",
+                  "model":  "tasktussle:item/tasks/click/click_me2",
                   "type":  "minecraft:model"
               }
 }

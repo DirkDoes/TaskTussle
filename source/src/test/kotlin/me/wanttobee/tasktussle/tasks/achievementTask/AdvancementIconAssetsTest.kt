@@ -26,13 +26,13 @@ class AdvancementIconAssetsTest {
 		assertEquals(items.size, items.toSet().size)
 		for ((id, style) in advancementIcons) {
 			assertTrue(style.item in items, "$id selects a missing item")
-			assertTrue(Files.exists(pack.resolve("models/item/advancement_${style.plate}.json")))
+			assertTrue(Files.exists(pack.resolve("models/item/tasks/advancement/${style.plate}.json")))
 			// The completion animation uses FIXED, while the card uses GUI.
 			for (context in listOf("gui", "fixed")) {
 				val icon = resolve(layers[1].asJsonObject, style.plate, style.item, context)
 				assertTrue(icon["type"].asString != "minecraft:empty")
 				val plate = resolve(layers[0].asJsonObject, style.plate, style.item, context)
-				assertTrue(plate.toString().contains("tasktussle:item/advancement_${style.plate}"))
+				assertTrue(plate.toString().contains("tasktussle:item/tasks/advancement/${style.plate}"))
 			}
 		}
 	}

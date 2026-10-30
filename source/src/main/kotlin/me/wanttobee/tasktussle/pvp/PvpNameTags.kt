@@ -50,7 +50,7 @@ internal class PvpNameTags {
 
 	private fun namePrefix(optedIn: Boolean) = Component.empty()
 		.append(Component.`object`(
-			AtlasSprite(AtlasIds.ITEMS, Identifier.parse(if (optedIn) "minecraft:item/iron_sword" else "tasktussle:item/peacefull")),
+			AtlasSprite(AtlasIds.ITEMS, Identifier.parse(if (optedIn) "minecraft:item/iron_sword" else "tasktussle:item/shared/peaceful")),
 			Component.literal(if (optedIn) "PvP on" else "PvP off"),
 		).withStyle { it.withColor(ChatFormatting.WHITE).withBold(false).withItalic(false) })
 		.append(" ")

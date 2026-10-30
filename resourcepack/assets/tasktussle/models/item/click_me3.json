@@ -1,6 +1,0 @@
-{
-    "textures":  {
-                     "layer0":  "tasktussle:item/click_me/click_me3"
-                 },
-    "parent":  "minecraft:item/generated"
-}

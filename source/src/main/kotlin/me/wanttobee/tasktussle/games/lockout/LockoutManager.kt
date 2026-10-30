@@ -45,5 +45,6 @@ object LockoutManager : ITTGameManager {
 	private fun mostTasks(game: ITTGame) = uniqueLeader(game.teams, compareBy { it.completed })
 	override fun goal(settings: TaskTussleSettings) = "Claim the most tasks before the shared card closes (first ${settings.sharedTaskCompletionLimit} teams per task, capped to participating teams)"
 	override fun settingsMenu(id: Int, inventory: Inventory, system: TaskTussleSystem) = LockoutSettingsMenu(id, inventory, system)
-	override fun settingsLore(settings: TaskTussleSettings) = listOf("Teams per task: ${settings.sharedTaskCompletionLimit}", "Time up: ${settings.lockoutTimeoutRule.label}")
+	override fun settingsControls(system: TaskTussleSystem) = LockoutSettingsMenu.controls(system)
+	override fun settingsLore(settings: TaskTussleSettings) = listOf("Teams per task: ${settings.sharedTaskCompletionLimit}", "Time up: ${settings.lockoutTimeoutRule.label}", "Shared card and scores are always public")
 }

@@ -8,7 +8,7 @@
     },
     {
       "type": "bitmap",
-      "file": "tasktussle:gui/lockout_card_big.png",
+      "file": "tasktussle:gui/backgrounds/lockout_card.png",
       "height": 256,
       "ascent": 13,
       "chars": [

@@ -63,12 +63,12 @@ class CatalogContentsMenu(
 	private fun modal(id: Identifier) {
 		clearActions()
 		for (column in 1..6) {
-			display(9 + column, modalEdge(when (column) { 1 -> "tl"; 6 -> "tr"; else -> "t" }))
-			display(36 + column, modalEdge(when (column) { 1 -> "bl"; 6 -> "br"; else -> "b" }))
+			display(9 + column, separator())
+			display(36 + column, separator())
 		}
 		for (row in 2..3) {
-			display(row * 9 + 1, modalEdge("l"))
-			display(row * 9 + 6, modalEdge("r"))
+			display(row * 9 + 1, separator())
+			display(row * 9 + 6, separator())
 		}
 		display(20, separator())
 		display(21, catalogEntry(id))
@@ -108,10 +108,6 @@ class CatalogContentsMenu(
 
 	private fun tierDot(tier: String, title: String, color: ChatFormatting) = named(Items.PAPER, title, color).apply {
 		set(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath("tasktussle", "tier_${tier}_dot"))
-	}
-
-	private fun modalEdge(part: String) = named(Items.PAPER, " ", ChatFormatting.DARK_GRAY).apply {
-		set(DataComponents.ITEM_MODEL, Identifier.fromNamespaceAndPath("tasktussle", "modal_$part"))
 	}
 
 	private fun arrow(up: Boolean, enabled: Boolean): ItemStack = named(

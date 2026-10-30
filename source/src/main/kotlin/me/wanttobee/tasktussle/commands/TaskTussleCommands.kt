@@ -16,20 +16,13 @@ import net.minecraft.server.permissions.Permissions
 
 object TaskTussleCommands {
 	fun register(dispatcher: CommandDispatcher<CommandSourceStack>, system: TaskTussleSystem, lobby: LobbyService) {
-		val mainHelp = CommandHelp("/taskTussle", "to start a game or change settings before starting the game")
+		val mainHelp = CommandHelp("/taskTussle", "to open game settings or manage the current game")
 		val worldHelp = CommandHelp("/taskTussle worldsetup", "to prepare or clear the Task Tussle lobby")
 
 		val taskTussle = dispatcher.register(
 			literal("taskTussle").requires(::admin)
 				.executes { context -> mainHelp.show(context.source) }
 				.then(mainHelp.helpCommand())
-				.then(mainHelp.branch("start", "to start one of the games").apply {
-					system.gameManagers.forEach { manager -> then(literal(manager.key)
-						.executes { context -> fail(context.source, "you must specify the amount of teams you want to play with") }
-						.then(argument("teams", integer(manager.teamRange.first, manager.teamRange.last)).executes { context ->
-							if (system.start(context.source.server, player(context.source), getInteger(context, "teams"), manager)) 1 else 0
-						})) }
-				})
 				.then(mainHelp.branch("debug", "check information about the current running game")
 					.then(literal("status").executes { context -> player(context.source)?.let { system.debugStatus(it); 1 } ?: 0 })
 					.then(literal("log").executes { context ->
@@ -122,11 +115,6 @@ object TaskTussleCommands {
 			source.sendSuccess({ divider }, false)
 			return 1
 		}
-	}
-
-	private fun fail(source: CommandSourceStack, text: String): Int {
-		source.sendFailure(Component.literal(text))
-		return 0
 	}
 
 	private fun player(source: CommandSourceStack) = source.player.also {

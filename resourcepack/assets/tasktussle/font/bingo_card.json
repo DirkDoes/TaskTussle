@@ -8,7 +8,7 @@
     },
     {
       "type": "bitmap",
-      "file": "tasktussle:gui/bingo_card_big.png",
+      "file": "tasktussle:gui/backgrounds/bingo_card.png",
       "height": 256,
       "ascent": 13,
       "chars": ["\uF801"]

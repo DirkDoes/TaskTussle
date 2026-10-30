@@ -1,6 +1,6 @@
 {
   "item.totem.use": {
     "replace": true,
-    "sounds": ["tasktussle/silence"]
+    "sounds": ["tasktussle:effects/silence"]
   }
 }

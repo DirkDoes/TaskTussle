@@ -29,12 +29,6 @@ abstract class AbstractContainerMenuMixin {
 			player.containerMenu.broadcastFullState()
 			return
 		}
-		if (player is ServerPlayer && TaskTussleMod.isDeliverySpot(clicked)) {
-			TaskTussleMod.clickDeliverySpot(player, getCarried())
-			callback.cancel()
-			player.containerMenu.broadcastFullState()
-			return
-		}
 		if (
 			ForcedItems.isForcedItem(getCarried()) ||
 			ForcedItems.isForcedItem(clicked) ||

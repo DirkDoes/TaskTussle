@@ -1,7 +1,7 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "tasktussle:item/empty_slot"
+    "model": "tasktussle:item/ui/decorations/empty_slot"
   },
   "oversized_in_gui": true
 }

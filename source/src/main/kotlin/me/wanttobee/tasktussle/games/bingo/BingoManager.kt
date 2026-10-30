@@ -62,7 +62,9 @@ object BingoManager : ITTGameManager {
 
 	override fun goal(settings: TaskTussleSettings) = settings.winningCondition
 	override fun settingsMenu(id: Int, inventory: Inventory, system: TaskTussleSystem) = BingoSettingsMenu(id, inventory, system)
+	override fun settingsControls(system: TaskTussleSystem) = BingoSettingsMenu.controls(system)
 	override fun settingsLore(settings: TaskTussleSettings) = listOf(
+		"Card visibility: ${settings.cardVisibility}",
 		"Time up: ${settings.bingoTimeoutRule.label}",
 		"${if (settings.mutualTasks <= 25) "Mutual tasks" else "Task pool"}: ${settings.mutualTasks}",
 		"Win condition: ${settings.winningCondition}",

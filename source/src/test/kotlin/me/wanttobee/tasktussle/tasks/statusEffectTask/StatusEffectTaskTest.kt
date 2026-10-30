@@ -51,9 +51,9 @@ class StatusEffectTaskTest {
 		assertEquals(Difficulty.HARD, StatusEffectTaskFiles.difficulty("hero_of_the_village"))
 		val pack = Path.of("..", "resourcepack", "assets", "tasktussle")
 		for (effect in all) {
-			assertTrue(Files.size(pack.resolve("textures/item/status_effects/${effect.path}.png")) > 0)
-			assertTrue(Files.readString(pack.resolve("models/item/status_effect/${effect.path}.json")).contains("tasktussle:item/status_effects/${effect.path}"))
-			assertTrue(Files.readString(pack.resolve("items/status_effect/${effect.path}.json")).contains("tasktussle:item/status_effect/${effect.path}"))
+			assertTrue(Files.size(pack.resolve("textures/item/tasks/status_effect/${effect.path}.png")) > 0)
+			assertTrue(Files.readString(pack.resolve("models/item/tasks/status_effect/${effect.path}.json")).contains("tasktussle:item/tasks/status_effect/${effect.path}"))
+			assertTrue(Files.readString(pack.resolve("items/status_effect/${effect.path}.json")).contains("tasktussle:item/tasks/status_effect/${effect.path}"))
 		}
 	}
 
@@ -85,7 +85,7 @@ class StatusEffectTaskTest {
 		val inventory = Inventory::class.java.constructors.single().newInstance(null, EntityEquipment()) as Inventory
 		val model = Identifier.parse("tasktussle:status_effect/speed")
 		val index = system.taskFactory.managers.indexOf(StatusEffectTaskManager)
-		assertEquals(model, SettingsMenu(1, inventory, system).getSlot(18 + index).item.get(DataComponents.ITEM_MODEL))
+		assertEquals(model, SettingsMenu(1, inventory, system).getSlot(47 + index).item.get(DataComponents.ITEM_MODEL))
 		assertEquals(model, StatusEffectSettingsMenu(2, inventory, system).getSlot(4).item.get(DataComponents.ITEM_MODEL))
 		assertEquals(model, CatalogTypeMenu(3, inventory, system).getSlot(3).item.get(DataComponents.ITEM_MODEL))
 		StatusEffectTaskManager.setWeight(system.settings, 7)

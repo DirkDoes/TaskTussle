@@ -132,7 +132,7 @@ class TradeTaskTest {
 		}
 		val inventory = Inventory::class.java.constructors.single().newInstance(null, EntityEquipment()) as Inventory
 		val menu = SettingsMenu(1, inventory, system, true)
-		val slot = 18 + system.taskFactory.managers.indexOf(TradeTaskManager)
+		val slot = 47 + system.taskFactory.managers.indexOf(TradeTaskManager)
 		assertEquals(tradeModel, menu.getSlot(slot).item.get(DataComponents.ITEM_MODEL))
 		assertEquals(tradeModel, SettingsMenu(2, inventory, system).getSlot(slot).item.get(DataComponents.ITEM_MODEL))
 		assertEquals(tradeModel, TradeSettingsMenu(3, inventory, system).getSlot(4).item.get(DataComponents.ITEM_MODEL))

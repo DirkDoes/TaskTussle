@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "tasktussle:item/status_effect/conduit_power"
+    "model": "tasktussle:item/tasks/status_effect/conduit_power"
   }
 }

@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "tasktussle:item/lockout_card"
+    "model": "tasktussle:item/shared/lockout_card"
   }
 }

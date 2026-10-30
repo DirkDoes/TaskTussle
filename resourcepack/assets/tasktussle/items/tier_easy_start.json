@@ -1,7 +1,7 @@
 {
     "oversized_in_gui":  true,
     "model":  {
-                  "model":  "tasktussle:item/tier_easy_start",
+                  "model":  "tasktussle:item/ui/tier_lines/easy_start",
                   "type":  "minecraft:model"
               }
 }

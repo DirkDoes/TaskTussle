@@ -1,7 +1,7 @@
 {
     "oversized_in_gui":  true,
     "model":  {
-                  "model":  "tasktussle:item/arrow_up",
+                  "model":  "tasktussle:item/ui/navigation/arrow_up",
                   "type":  "minecraft:model"
               }
 }

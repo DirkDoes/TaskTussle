@@ -15,7 +15,7 @@
             ],
             "model": {
               "type": "minecraft:model",
-              "model": "tasktussle:item/advancement_task"
+              "model": "tasktussle:item/tasks/advancement/task"
             }
           },
           {
@@ -25,7 +25,7 @@
               "models": [
                 {
                   "type": "minecraft:model",
-                  "model": "tasktussle:item/advancement_task"
+                  "model": "tasktussle:item/tasks/advancement/task"
                 }
               ],
               "transformation": {
@@ -57,7 +57,7 @@
         ],
         "fallback": {
           "type": "minecraft:model",
-          "model": "tasktussle:item/advancement_task"
+          "model": "tasktussle:item/tasks/advancement/task"
         }
       },
       {

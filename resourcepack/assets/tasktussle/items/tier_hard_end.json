@@ -1,7 +1,7 @@
 {
     "oversized_in_gui":  true,
     "model":  {
-                  "model":  "tasktussle:item/tier_hard_end",
+                  "model":  "tasktussle:item/ui/tier_lines/hard_end",
                   "type":  "minecraft:model"
               }
 }

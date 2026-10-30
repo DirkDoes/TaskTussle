@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "layer0":  "tasktussle:item/tasks/click/click_me3"
+                 },
+    "parent":  "minecraft:item/generated"
+}

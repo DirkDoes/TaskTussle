@@ -12,7 +12,6 @@ import net.minecraft.world.level.block.Blocks
 
 internal val ratioLore = listOf("L Click: Increase ratio", "R Click: Decrease ratio", "Shift+R Click: Set ratio to 0", "A ratio of 0 turns it off")
 
-internal val taskLore = listOf("Shift+L Click: Open details") + ratioLore
 
 internal val mutualLore = listOf("L Click: Increase amount", "R Click: Decrease amount", "Shift+L Click: Set amount to 25", "Shift+R Click: Set amount to 0")
 
@@ -25,7 +24,6 @@ internal fun separator(title: String = " "): ItemStack = named(Blocks.STAINED_GL
 
 internal fun emptyOption(type: String): ItemStack = named(Blocks.STAINED_GLASS.lightGray().asItem(), "Empty $type slot", ChatFormatting.GRAY, listOf("A spot for a future $type"))
 
-internal fun emptySetting(): ItemStack = named(Blocks.STAINED_GLASS.lightGray().asItem(), "Empty setting slot", ChatFormatting.GRAY, listOf("a spot for a future setting"))
 
 internal fun named(stack: ItemStack, name: String, color: ChatFormatting, lore: List<String> = emptyList(), count: Int = 1, enchanted: Boolean = false): ItemStack = stack.apply {
 	val visualCount = count.coerceIn(1, 99)

@@ -15,7 +15,6 @@ import me.wanttobee.tasktussle.base.tasks.TaskFactory
 import me.wanttobee.tasktussle.base.tasks.TaskState
 import me.wanttobee.tasktussle.base.tasks.TaskTemplate
 import me.wanttobee.tasktussle.base.tasks.claim
-import me.wanttobee.tasktussle.base.tasks.deliveryTask
 import me.wanttobee.tasktussle.base.tasks.taskStack
 import me.wanttobee.tasktussle.games.bingo.BingoCardLogic
 import me.wanttobee.tasktussle.games.bingo.BingoGame
@@ -149,8 +148,8 @@ class GameRulesTest {
 		val system = TaskTussleSystem()
 		val inventory = Inventory::class.java.constructors.single().newInstance(null, EntityEquipment()) as Inventory
 		val settings = SettingsMenu(1, inventory, system, true)
-		assertEquals("Bingo", settings.getSlot(36).item.get(DataComponents.CUSTOM_NAME)?.string)
-		assertEquals("Lockout", settings.getSlot(37).item.get(DataComponents.CUSTOM_NAME)?.string)
+		assertEquals("Bingo", settings.getSlot(0).item.get(DataComponents.CUSTOM_NAME)?.string)
+		assertEquals("Lockout", settings.getSlot(9).item.get(DataComponents.CUSTOM_NAME)?.string)
 		val lockout = LockoutSettingsMenu(2, inventory, system)
 		assertEquals("Teams per task: 1", lockout.getSlot(9).item.get(DataComponents.CUSTOM_NAME)?.string)
 	}
@@ -237,18 +236,6 @@ class GameRulesTest {
 		game.teams[1].tasks[0].claim(2, "Bob", 2)
 		assertEquals(listOf("Alice = 66.66%", "Ally = 33.33%"), game.teams[0].contributions())
 		assertEquals(listOf("Bob = 100.0%"), game.teams[1].contributions())
-	}
-
-	@Test
-	fun deliveriesCannotConsumeItemsForAlreadyClaimedOrLockedTasks() {
-		bootstrap()
-		val game = lockout(2)
-		val task = game.teams[0].tasks[0]
-		task.claim(1, "Alice", 2)
-		assertNull(deliveryTask(listOf(task), Items.STONE, 1, 2))
-		assertSame(task, deliveryTask(listOf(task), Items.STONE, 2, 2))
-		task.claim(2, "Bob", 2)
-		assertNull(deliveryTask(listOf(task), Items.STONE, 3, 2))
 	}
 
 	@Test

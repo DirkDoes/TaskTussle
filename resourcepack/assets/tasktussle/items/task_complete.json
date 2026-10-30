@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "tasktussle:item/task_complete"
+    "model": "tasktussle:item/tasks/task_complete"
   }
 }

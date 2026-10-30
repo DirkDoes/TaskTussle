@@ -19,8 +19,9 @@ class WinConditionMenu(containerId: Int, inventory: Inventory, private val syste
 		)
 		options.forEachIndexed { slot, option ->
 			if (option == null) display(slot, separator()) else button(slot, named(option.first, option.second, ChatFormatting.LIGHT_PURPLE, if (system.settings.winningCondition == option.second) listOf("current") else emptyList(), enchanted = system.settings.winningCondition == option.second)) { player, _ ->
+				if (!system.menus.canEditSettings(player)) return@button
 				system.settings.winningCondition = option.second
-				system.menus.openManagerSettings(player, "bingo")
+				system.menus.openSettings(player)
 			}
 		}
 	}

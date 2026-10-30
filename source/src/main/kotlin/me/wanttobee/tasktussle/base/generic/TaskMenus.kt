@@ -14,6 +14,7 @@ import me.wanttobee.tasktussle.base.tasks.mayCreateCatalog
 import me.wanttobee.tasktussle.base.tasks.mayEditCatalog
 import me.wanttobee.tasktussle.base.tasks.moveTaskBetweenTiers
 import me.wanttobee.tasktussle.util.message
+import me.wanttobee.tasktussle.resourcepack.TaskTussleResourcePackServer
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerPlayer
@@ -22,22 +23,20 @@ import net.minecraft.world.MenuProvider
 import net.minecraft.world.SimpleMenuProvider
 
 class TaskMenus(private val system: TaskTussleSystem) {
+	private val settingsGames = mutableMapOf<java.util.UUID, String>()
+	fun rememberSettingsGame(player: ServerPlayer, key: String) { settingsGames[player.uuid] = key }
+	fun forgetSettingsGame(player: ServerPlayer) { settingsGames.remove(player.uuid) }
+	private fun settingsGame(player: ServerPlayer) = settingsGames[player.uuid] ?: game?.manager?.key ?: system.gameManagers.first().key
 	private val settings get() = system.settings
 	private val game get() = system.currentGame()
 	private val selection get() = system.teams.selection
 	private val server get() = system.server
 
-	fun openSettings(player: ServerPlayer) = openMenu(player, SimpleMenuProvider(
-		{ id, inventory, _ -> SettingsMenu(id, inventory, system) }, Component.literal("Task Tussle Settings"),
-	))
+	fun canEditSettings(player: ServerPlayer): Boolean = isOperator(player)
 
-	fun openReadOnlySettings(player: ServerPlayer): Boolean {
-		if (game != null || selection != null) return false
-		openMenu(player, SimpleMenuProvider(
-			{ id, inventory, _ -> SettingsMenu(id, inventory, system, true) }, Component.literal("Task Tussle Settings Preview"),
-		))
-		return true
-	}
+	fun openSettings(player: ServerPlayer) = openMenu(player, SimpleMenuProvider(
+		{ id, inventory, _ -> SettingsMenu(id, inventory, system, !canEditSettings(player), settingsGame(player)) }, SettingsMenu.title(TaskTussleResourcePackServer.active),
+	))
 
 	fun openManagerSettings(player: ServerPlayer, manager: String) = openMenu(player, SimpleMenuProvider(
 		{ id, inventory, _ -> system.manager(manager).settingsMenu(id, inventory, system) },
@@ -145,6 +144,7 @@ class TaskMenus(private val system: TaskTussleSystem) {
 	private fun isOperator(player: ServerPlayer) = player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)
 
 	fun selectCatalog(player: ServerPlayer, catalog: ITaskFiles, file: String): Boolean {
+		if (!canEditSettings(player)) return false
 		val old = catalog.selectedFile(settings)
 		catalog.selectFile(settings, file)
 		return runCatching(system::reloadPools).fold(

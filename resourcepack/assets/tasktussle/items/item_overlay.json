@@ -18738,7 +18738,7 @@
                   "when": "trade_task_overlay",
                   "model": {
                     "type": "minecraft:model",
-                    "model": "tasktussle:item/item_overlays/trade_task_overlay",
+                    "model": "tasktussle:item/tasks/overlays/trade_task_overlay",
                     "tints": [
                       {
                         "type": "minecraft:constant",

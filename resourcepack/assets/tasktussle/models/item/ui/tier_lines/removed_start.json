@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:item/generated",
+  "display": {
+    "gui": {
+      "scale": [1.125, 1.125, 1]
+    }
+  },
+  "textures": {
+    "layer0": "tasktussle:item/ui/tier_lines/removed_start"
+  }
+}

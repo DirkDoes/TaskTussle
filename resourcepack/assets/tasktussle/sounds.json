@@ -1,18 +1,18 @@
 {
   "item.totem.use": {
-    "sounds": ["tasktussle:item/totem/use_totem"],
+    "sounds": ["tasktussle:effects/use_totem"],
     "subtitle": "subtitles.item.totem.use"
   },
   "reward_mid": {
-    "sounds": ["tasktussle:reward_mid"]
+    "sounds": ["tasktussle:rewards/reward_mid"]
   },
   "reward_large": {
-    "sounds": ["tasktussle:reward_large"]
+    "sounds": ["tasktussle:rewards/reward_large"]
   },
   "click_button": {
-    "sounds": ["tasktussle:click_button"]
+    "sounds": ["tasktussle:ui/click_button"]
   },
   "click_page_button": {
-    "sounds": ["tasktussle:click_page_button"]
+    "sounds": ["tasktussle:ui/click_page_button"]
   }
 }

@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "tasktussle:item/trade_task"
+    "model": "tasktussle:item/tasks/trade/trade_task"
   }
 }

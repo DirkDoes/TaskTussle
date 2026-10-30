@@ -2,11 +2,19 @@ package me.wanttobee.tasktussle.base.generic
 
 import me.wanttobee.tasktussle.TaskTussleSystem
 import net.minecraft.ChatFormatting
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Inventory
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.inventory.ContainerInput
 import net.minecraft.world.item.Items
 import net.minecraft.world.level.block.Blocks
 
 class TimeSettingsMenu(containerId: Int, inventory: Inventory, private val system: TaskTussleSystem) : ActionDispenserMenu(containerId, inventory) {
+	override fun clicked(slotId: Int, button: Int, input: ContainerInput, player: Player) {
+		if (player !is ServerPlayer || !system.menus.canEditSettings(player)) return
+		super.clicked(slotId, button, input, player)
+	}
+
 	init { refresh() }
 	private fun refresh() {
 		clear(); repeat(9) { display(it, separator()) }

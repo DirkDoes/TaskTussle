@@ -123,7 +123,7 @@ class Generator:
     def __init__(self, jar):
         self.jar = jar
         self.overrides = json.loads(Path(__file__).with_name("backplate-overrides.json").read_text())
-        self.common = self.display("tasktussle:item/advancement_task", "fixed")
+        self.common = self.display("tasktussle:item/tasks/advancement/task", "fixed")
 
     @lru_cache(None)
     def model(self, ref):
@@ -234,7 +234,7 @@ class Generator:
             return shared_select(1, entries, dict(entries)["minecraft:knowledge_book"])
         plates = []
         for frame in ("task", "goal", "challenge"):
-            plate = {"type": "minecraft:model", "model": f"tasktussle:item/advancement_{frame}"}
+            plate = {"type": "minecraft:model", "model": f"tasktussle:item/tasks/advancement/{frame}"}
             gui = select(1, [(volumes, composite(plate, [0, 0, -2]))], plate)
             held = select(1, [(volumes, composite(plate, [0, 0, -.375]))], plate)
             fixed = composite(plate, [0, 0, -.5], [1, 1, 2])
